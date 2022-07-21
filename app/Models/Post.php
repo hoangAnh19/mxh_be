@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Post extends Model
 {
-    protected $table='post';
+    protected $table = 'post';
     use HasFactory;
     use SoftDeletes;
     public $listPrevent = [];
@@ -40,7 +40,7 @@ class Post extends Model
     }
     public function group()
     {
-        return $this->hasOne('App\Models\Group', 'id', 'group_id')->select('id', 'name', 'type','cover');
+        return $this->hasOne('App\Models\Group', 'id', 'group_id')->select('id', 'name', 'type', 'cover');
     }
     public function post_share()
     {
@@ -52,7 +52,7 @@ class Post extends Model
     }
     public function user()
     {
-        return $this->hasOne('App\Models\User', 'id', 'user_id')->select('id', 'first_name', 'last_name','avatar');
+        return $this->hasOne('App\Models\User', 'id', 'user_id')->select('id', 'first_name', 'last_name', 'avatar', 'phone');
     }
     public function user_2()
     {

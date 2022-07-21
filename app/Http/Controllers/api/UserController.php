@@ -11,12 +11,20 @@ use App\Repositories\Relationship\RelationshipInterface;
 use App\Repositories\Chat\ChatInterface;
 use App\Models\User;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use Image;
 use Storage;
-use Hash;
+use Illuminate\Support\Facades\Hash;
 use App\Events\OnlineEvent;
 use App\Models\Relationship;
+use Google\Service\StreetViewPublish\Level;
+use SebastianBergmann\Environment\Console;
+use Illuminate\Foundation\Auth\ResetsPasswords;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
+use PhpParser\Builder\Function_;
+use Illuminate\Support\Facades\DB;
+
 
 class UserController extends Controller
 {
@@ -29,7 +37,7 @@ class UserController extends Controller
     public function online(Request $request)
     {
         $user_id = Auth::id();
-        $ids_1 = $this->relationshipInterface->getListFriend($user_id, 0 ,0);
+        $ids_1 = User::all()->pluck('id');
         $ids_2 = $this->chatInterface->getListIdChat($user_id);
         $ids = $ids_1->merge($ids_2)->unique();
         event(
@@ -39,11 +47,11 @@ class UserController extends Controller
                 'client_id' => $request->client_id,
             ])
         );
-        return;
     }
 
 
-    public function login(Request $request){
+    public function login(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'email_or_phone' => ['regex:/(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}|^.+@.+$/i', 'required'],
             'password' => ['required', 'min:6', 'max:30'],
@@ -64,35 +72,86 @@ class UserController extends Controller
 
         $user_name = $request->email_or_phone;
         $regex_email = '/^.+@.+$/i';
-        if (preg_match($regex_email, $user_name)){
+        if (preg_match($regex_email, $user_name)) {
             $column = 'email';
-        } else
-        {
+        } else {
             $column = 'phone';
         }
-        $token = Auth::guard('api')->attempt([$column => $user_name, 'password'=>$request->password], true);
-        if ($token ) {
 
+
+        $token1 = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password, 'level' => 1], true);
+        $token2 = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password, 'level' => 2], true);
+        $token3 = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password, 'level' => 3], true);
+        $token4 = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password, 'level' => 4], true);
+        $token5 = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password, 'level' => 5], true);
+
+        if ($token5) {
             return response()->json([
                 'status' => 'success',
-                'access_token' => $token,
+                'access_token' => $token5,
+                'role' => 'admin'
             ]);
-        }
-        else {
+        } else {
+            if ($token4) {
+                return response()->json([
+                    'status' => 'success',
+                    'access_token' => $token4,
+                    'role' => 'user'
+                ]);
+            } else
+                if ($token3) {
+                return response()->json([
+                    'status' => 'success',
+                    'access_token' => $token3,
+                    'role' => 'user'
+                ]);
+            } else {
+                if ($token2) {
+                    return response()->json([
+                        'status' => 'success',
+                        'access_token' => $token2,
+                        'role' => 'user'
+                    ]);
+                } else {
+                    if ($token2) {
+                        return response()->json([
+                            'status' => 'success',
+                            'access_token' => $token2,
+                            'role' => 'user'
+                        ]);
+                    } else {
+                        if ($token1) {
+                            return response()->json([
+                                'status' => 'success',
+                                'access_token' => $token2,
+                                'role' => 'user'
+                            ]);
+                        }
+                    }
+                }
+            }
+
             return response()->json([
                 'status' => 'failed',
-                'errors' => ['loser'=>['Tai khoan va mat khau khong chinh xac']]
+                'errors' => ['loser' => ['Tài khoản hoặc Mật khẩu bạn đã nhập không chính xác']]
 
             ]);
         }
     }
-    public function searchUser(Request $request){
+
+
+
+    public function login1(Request $request)
+    {
         $validator = Validator::make($request->all(), [
-            'user_name' => ['max:30'],
-            'id' => ['exists:users,id'],
+            'email_or_phone' => ['regex:/(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}|^.+@.+$/i', 'required'],
+            'password' => ['required', 'min:6', 'max:30'],
         ], [
-            'user_name.max' => 'Tên không hợp lệ',
-            'id.exists' => 'User không tồn tại'
+            'email_or_phone.required' => 'Khong duoc de trong',
+            'email_or_phone.regex' => 'Vui long nhap email hoac so dien thoai',
+            'password.required' => 'Khong duoc de trong',
+            'password.min' => 'Mat khau khong duoc it hon 6 ki tu',
+            'password.max' => 'Mat khau khong duoc qua 30 ki tu',
         ]);
 
         if ($validator->fails()) {
@@ -102,37 +161,30 @@ class UserController extends Controller
             ]);
         }
 
-        $user_name = $request->user_name?? null;
-        $id = $request->id ?? null;
-        if ($user_name) {
-            $ids = $this->relationshipInterface->getListFriend(Auth::user()->id, 1, 5);
-            $list = $this->userInterface->getListUserByIds($ids, $user_name);
-
-        } else if ($id){
-            $list = $this->userInterface->getListUserByIds([$id], null);
-
-        } else  return response()->json([
-            'status' => 'failed',
-            'errors' => ['Thiếu dữ liệu đầu vào']
-
-        ]);;
-
-        if ($list ) {
+        $user_name = $request->email_or_phone;
+        $regex_email = '/^.+@.+$/i';
+        if (preg_match($regex_email, $user_name)) {
+            $column = 'email';
+        } else {
+            $column = 'phone';
+        }
+        $token = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password], true);
+        if ($token) {
             return response()->json([
                 'status' => 'success',
-                'friend' => $list,
+                'access_token' => $token,
             ]);
-        }
-        else {
+        } else {
             return response()->json([
                 'status' => 'failed',
-                'errors' => ['Đã có lỗi xảy ra, vui lòng thử lại']
+                'errors' => ['loser' => ['Tai khoan va mat khau khong chinh xac']]
 
             ]);
         }
-
     }
-    public function getInfo(Request $request){
+
+    public function getInfo(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'user_id' => ['required', 'exists:users,id'],
         ], [
@@ -141,29 +193,22 @@ class UserController extends Controller
         ]);
         if ($validator->fails()) {
             return [
-            'status' => 'failed',
-            "message" => json_decode($validator->errors())
+                'status' => 'failed',
+                "message" => json_decode($validator->errors())
             ];
         }
         $user_id_2 = intval($request->user_id);
 
-        $relationship = $this->relationshipInterface->getRelationship(Auth::user()->id, $user_id_2);
-        if ($relationship && ($relationship->type_friend == config('relationship.type_friend.prevent') || $relationship->type_friend == config('relationship.type_friend.prevented'))){
-            return [
-                'status' => 'failed',
-                'message' => 'Taif khoản không tồn tại',
-            ];
-        } else {
-            if ($user_id_2 != Auth::user()->id)
-            $user = User::where('id', $user_id_2)->select('id', 'first_name', 'last_name', 'gender', 'bird_day', 'workplace', 'avatar', 'cover', 'education', 'story', 'address', 'created_at')->first();
-            else $user = Auth::user();
-            return [
-                'status' => 'success',
-                'data' => $user,
-            ];
-        }
 
+        if ($user_id_2 != Auth::user()->id)
+            $user = User::where('id', $user_id_2)->select('id', 'first_name', 'last_name', 'gender', 'bird_day', 'workplace', 'avatar', 'cover', 'education', 'story', 'address', 'created_at')->first();
+        else $user = Auth::user();
+        return [
+            'status' => 'success',
+            'data' => $user,
+        ];
     }
+
 
     public function create(Request $request)
     {
@@ -173,7 +218,7 @@ class UserController extends Controller
             'first_name' => ['required', 'max:20'],
             'last_name' => ['required', 'max:20'],
             'bird_day' => ['required', 'date', 'before:today'],
-            'gender' => ['required','in:0,1,2'],
+            'gender' => ['required', 'in:0,1,2'],
         ], [
             'email_or_phone.required' => 'Khong duoc de trong',
             'email_or_phone.regex' => 'Vui long nhap email hoac so dien thoai',
@@ -195,24 +240,21 @@ class UserController extends Controller
         $options = [];
         $user_name = $request->email_or_phone;
         $regex_email = '/^.+@.+$/i';
-        if (preg_match($regex_email, $user_name)){
+        if (preg_match($regex_email, $user_name)) {
             $options['email'] = $user_name;
-            if (User::where('email', $user_name)->count())
-            {
+            if (User::where('email', $user_name)->count()) {
                 $errors["email_or_phone"][] = "Email da ton tai";
             };
-        } else
-        {
+        } else {
             $options['phone'] = $user_name;
-            if (User::where('phone', $user_name)->count())
-            {
+            if (User::where('phone', $user_name)->count()) {
                 $errors["email_or_phone"][] = "So dien thoai da ton tai";
             };
         }
         if ($errors) {
             return response()->json([
-            'status' => 'failed',
-            "message " => $errors,
+                'status' => 'failed',
+                "message " => $errors,
             ]);
         }
         $options['first_name'] = $request->first_name;
@@ -220,16 +262,14 @@ class UserController extends Controller
         $options['password'] = $request->password;
         $options['bird_day'] = $request->bird_day;
         $options['gender'] = $request->gender;
-        $options['display_friend'] = config('user.display_friend.yes');
-        $options['display_follow'] = config('user.display_follow.yes');
+        $options['level'] = 2;
+
         $result = $this->userInterface->create($options);
         return response()->json([
             'status' => 'success',
             'message' => 'Tao moi thanh cong',
             'data' => $result
         ]);
-
-
     }
 
     public function logoff(Request $request)
@@ -245,7 +285,7 @@ class UserController extends Controller
         $user = Auth::user();
         $validator = Validator::make($request->all(), [
             'email' => ['email', Rule::unique('users')->ignore($user->id)],
-            'phone' =>['regex:/^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/', Rule::unique('users')->ignore($user->id)],
+            'phone' => ['regex:/^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/', Rule::unique('users')->ignore($user->id)],
             'password' => ['min:6', 'max:30', 'confirmed'],
             'first_name' => ['required', 'max:50'],
             'last_name' => ['required', 'max:50'],
@@ -255,11 +295,9 @@ class UserController extends Controller
             'cover' => ['image'],
             'story' => ['max:256'],
             'address' => ['max:100'],
-            'display_friend' => ['in:1, 2'],
             'display_follow' => ['in: 1, 2'],
-            'education' => ['array'],
-            'workplace' => ['array'],
-            'education.*' => ['array'],
+            'education' => ['max:256'],
+            'workplace' => ['max:256'],
 
         ], [
             'email.email' => 'Vui long nhap email',
@@ -287,7 +325,7 @@ class UserController extends Controller
         $errors = (array)json_decode($validator->errors());
         $options = $request->all();
         if (($options['password'] ?? null) && Hash::check($options['password'], $user->password)) {
-        $errors['password'][] = "Mat khau khong duoc trung voi mat khau cu";
+            $errors['password'][] = "Mat khau khong duoc trung voi mat khau cu";
         }
         // if ( ($options['email'] ?? null) && $user->email) {
         //     $errors['email'][]="Ban da dang ky email";
@@ -295,10 +333,10 @@ class UserController extends Controller
         // if ( ($options['phone'] ?? null) && $user->phone) {
         //     $errors['phone'][]="Ban da dang ky so dien thoai";
         // }
-        if ($options['education'] ?? null)
-            $options['education'] = json_encode($options['education']);
-        if ($options['workplace'] ?? null)
-            $options['workplace'] = json_encode($options['workplace']);
+        // if ($options['education'] ?? null)
+        //     $options['education'] = json_encode($options['education']);
+        // if ($options['workplace'] ?? null)
+        //     $options['workplace'] = json_encode($options['workplace']);
         if ($errors) {
             return response()->json([
                 'status' => 'failed',
@@ -320,18 +358,101 @@ class UserController extends Controller
         }
     }
 
-    public function test(Request $request)
+    public function uploadAvatar(Request $request)
     {
 
-        $imageName = uniqid() . time() . '.' . $request->image->getClientOriginalExtension();
-        $image = Image::make($request->image)->encode('jpg', 75);
-        // Storage::disk('google')->put('test.txt',  "123");
-        Storage::disk('google')->put($imageName, $image);
+
+        $options = $request->all();
+        $result = $this->userInterface->update($options);
+        if ($result) {
             return response()->json([
                 'status' => 'success',
-                'data' => [
-                    'image_name' => $imageName
-                ]
+                'message' => 'Cap nhap thanh cong',
+                'data' => $result
             ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                'errors' => ["loser" => 'Cap nhap that bai']
+            ]);
+        }
+    }
+
+    public function searchUser(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_name' => ['max:30'],
+
+        ], [
+            'user_name.max' => 'Tên không hợp lệ',
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'failed',
+                'errors' => $validator->errors()
+            ]);
+        }
+
+        $user_name = $request->user_name ?? null;
+        if ($user_name) {
+            $list = $this->userInterface->searchUser($user_name);
+        }
+        if ($list) return response()->json([
+            'status' => 'success',
+            'data' => $list
+        ]);
+        else return response()->json([
+            'status' => 'falied',
+            'data' => 'da co loi'
+        ]);
+        // return response()->json(['data' => $user_name]);
+    }
+
+
+    public function banUser(Request $request)
+    {
+
+        $user = $request->id;
+
+        $result = $this->userInterface->banUser($user);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'cap nhat thanh cong',
+            'data' => $result
+        ]);
+    }
+
+    public function activeUser(Request $request)
+    {
+
+        $user = $request->id;
+
+        $result = $this->userInterface->activeUser($user);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'cap nhat thanh cong',
+            'data' => $result
+        ]);
+    }
+
+    public function assignRole(Request $request)
+    {
+        $user_id = $request->user_id;
+        $role = $request->role;
+        $result = $this->userInterface->assignRole($user_id, $role);
+        if ($result) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cap nhap thanh cong',
+                'data' => $result
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                'errors' => ["loser" => 'Cap nhap that bai']
+            ]);
+        }
     }
 }

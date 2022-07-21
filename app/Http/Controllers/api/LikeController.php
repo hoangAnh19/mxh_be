@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 use App\Repositories\Like\LikeInterface;
 use Illuminate\Http\Request;
 use App\Models\Like;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class LikeController extends Controller
 {
@@ -18,9 +18,9 @@ class LikeController extends Controller
     }
     public function like(Request $request)
     {
-        $type=array(0,1,2 ,3 ,4, 5, 6);
+        $type = array(0, 1, 2, 3, 4, 5, 6);
         $validator = Validator::make($request->all(), [
-            'post_id' => ['required','exists:post,id'],
+            'post_id' => ['required', 'exists:post,id'],
             'type'  =>  [Rule::in($type)],
         ], [
             'post_id.required' => 'Vui lòng chọn bài viết',
@@ -29,8 +29,8 @@ class LikeController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            "message " => json_decode($validator->errors())
+                'status' => 'failed',
+                "message " => json_decode($validator->errors())
             ]);
         }
         if (Like::updateOrCreate(
@@ -44,7 +44,7 @@ class LikeController extends Controller
         )) {
             return response()->json([
                 'status' => 'success',
-                ]);;
+            ]);;
         } else {
             response()->json([
                 'status' => 'failed',
@@ -52,20 +52,21 @@ class LikeController extends Controller
             ]);
         }
     }
-    public function getListByPost (Request $request) {
+    public function getListByPost(Request $request)
+    {
         $validator = Validator::make($request->all(), [
-            'post_id' => ['required','exists:post,id'],
+            'post_id' => ['required', 'exists:post,id'],
         ], [
             'post_id.required' => 'Vui lòng chọn bài viết',
             'post_id.exists' => 'Bài viết không tồn tại',
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            "message " => json_decode($validator->errors())
+                'status' => 'failed',
+                "message " => json_decode($validator->errors())
             ]);
         }
-        if ($result=$this->likeInterface->getListLikePost($request->post_id, $request->page ?? 1)) {
+        if ($result = $this->likeInterface->getListLikePost($request->post_id, $request->page ?? 1)) {
             return  response()->json([
                 'status' => 'success',
                 'data' => $result
@@ -75,5 +76,4 @@ class LikeController extends Controller
             'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
         ]);
     }
-
 }

@@ -1,9 +1,12 @@
 <?php
+
 namespace App\Repositories\User;
+
 use Illuminate\Support\Facades\Auth;
 
 use App\Models\User;
-use DB;
+use Illuminate\Support\Facades\DB;
+
 class UserRepository implements UserInterface
 {
     public function create($options)
@@ -30,11 +33,8 @@ class UserRepository implements UserInterface
         if (isset($options['phone'])) {
             $user->phone = $options['phone'];
         };
-        if (isset($options['display_friend'])) {
-            $user->display_friend = $options['display_friend'];
-        };
-        if (isset($options['display_follow'])) {
-            $user->display_follow = $options['display_follow'];
+        if (isset($options['level'])) {
+            $user->level = $options['level'];
         };
         $user->save();
         return $user;
@@ -78,37 +78,72 @@ class UserRepository implements UserInterface
         if (isset($options['story'])) {
             $user->story = $options['story'];
         };
-        if (isset($options['workplace'])) {
-            $user->workplace = $options['workplace'];
-        };
         if (isset($options['education'])) {
             $user->education = $options['education'];
         };
-        if (isset($options['display_friend'])) {
-            $user->display_friend = $options['display_friend'];
+        if (isset($options['workplace'])) {
+            $user->workplace = $options['workplace'];
         };
-        if (isset($options['display_follow'])) {
-            $user->display_follow = $options['display_follow'];
+        if (isset($options['level'])) {
+            $user->level = $options['level'];
         };
+
         if ($user->save())
-        return $user;
+            return $user;
     }
 
-    public function getListUserByIdsOrderByMessage($user_ids, $key_search){
+    public function getListUserByIdsOrderByMessage($user_ids, $key_search)
+    {
         // return User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover')->with('relationship1','relationship2')->get();
         $list = User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover');
-        if ($key_search) $list->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%".$key_search."%");
+        if ($key_search) $list->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%" . $key_search . "%");
 
-        return $list->with('relationship1','relationship2')->get();
+        return $list->with('relationship1', 'relationship2')->get();
     }
-    public function getListUserByIds($user_ids, $key_search){
+    public function getListUserByIds($user_ids, $key_search)
+    {
         // return User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover')->with('relationship1','relationship2')->get();
         $list = User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover');
-        if ($key_search) $list->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%".$key_search."%")->orderBy(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"));
+        if ($key_search) $list->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%" . $key_search . "%")->orderBy(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"));
 
-        return $list->with('relationship1','relationship2')->get();
+        return $list->with('relationship1', 'relationship2')->get();
     }
-    public function getListUserBirthDayByIds($user_ids){
-        return User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'bird_day')->get();
+
+
+
+    public function getListUserBirthDayByIds($user_ids)
+    {
+        return User::select('id', 'first_name', 'last_name', 'avatar', 'bird_day')->get();
+    }
+
+
+
+    public function searchUser($user_name)
+    {
+        return User::where('email', '!=', 'admin123@gmail.com')->where('first_name', 'like', '%' . $user_name . '%')->orWhere('last_name', 'like', '%' . $user_name . '%')->get();
+    }
+
+    public function banUser($options)
+    {
+        $user = User::find($options);
+        $user->level = 3;
+        if ($user->save())
+            return $user;
+    }
+
+    public function activeUser($options)
+    {
+        $user = User::find($options);
+        $user->level = 2;
+        if ($user->save())
+            return $user;
+    }
+
+    public function assignRole($user_id, $role)
+    {
+        $user = User::find($user_id);
+        $user->level = $role;
+        if ($user->save())
+            return $user;
     }
 }

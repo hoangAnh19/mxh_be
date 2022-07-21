@@ -7,33 +7,34 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Repositories\Group\GroupInterface;
 use App\Repositories\Member\MemberInterface;
-use App\Repositories\Relationship\RelationshipInterface;
 use App\Repositories\Post\PostInterface;
 use App\Models\Group;
 use App\Models\Member;
 use App\Models\Post;
-use Validator;
+use App\Models\RoleGroup;
+use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 use Image;
 use Storage;
 use Carbon\Carbon;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 
 
 class GroupController extends Controller
 {
-    private $role=array(1,2 ,3);
+    private $role = array(1, 2, 3);
     public function __construct(
         GroupInterface $groupInterface,
         MemberInterface $memberInterface,
-        PostInterface $postInterface,
-        RelationshipInterface $relationshipInterface)
-    {
-        $this->relationshipInterface = $relationshipInterface;
+        PostInterface $postInterface
+
+    ) {
+
         $this->groupInterface = $groupInterface;
         $this->postInterface = $postInterface;
-         $this->memberInterface = $memberInterface;
+        $this->memberInterface = $memberInterface;
     }
 
     public function create(Request $request)
@@ -53,12 +54,12 @@ class GroupController extends Controller
             'type.in' => 'Loai nhom khong hop le',
             'intro.max' => 'Vuot qua 3000 ki tu',
             'regulations.max' => 'Vuot qua 3000 ki tu',
-        'question.max' => 'Vuot qua 3000 ki tu',
+            'question.max' => 'Vuot qua 3000 ki tu',
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $options = [];
@@ -69,7 +70,7 @@ class GroupController extends Controller
         $options['intro'] = $request->intro ?? '';
         $options['question'] = $request->question ?? '';
         $options['cover'] = $request->cover ?? '';
-            try {
+        try {
             DB::beginTransaction();
             if ($result = $this->groupInterface->create($options)) {
                 $options2 = [];
@@ -93,14 +94,12 @@ class GroupController extends Controller
                         "message" => 'He thong da co loi xay ra, vui long thu lai',
                     ]);
                 }
-
             } else {
                 return response()->json([
                     'status' => 'failed',
                     "message" => 'He thong da co loi xay ra, vui long thu lai',
                 ]);
             }
-
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
@@ -119,8 +118,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $count = Member::where('group_id', $request->group_id)->where('status', config('member.status.member'))->count();
@@ -128,11 +127,11 @@ class GroupController extends Controller
             return response()->json([
                 'status' => 'success',
                 'data' => $count
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getCountPending(Request $request)
@@ -145,8 +144,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $count = Member::where('group_id', $request->group_id)->where('status', config('member.status.pending'))->count();
@@ -154,11 +153,11 @@ class GroupController extends Controller
             return response()->json([
                 'status' => 'success',
                 'data' => $count
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getCountPrevent(Request $request)
@@ -171,8 +170,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $count = Member::where('group_id', $request->group_id)->where('status', config('member.status.prevent'))->count();
@@ -180,11 +179,11 @@ class GroupController extends Controller
             return response()->json([
                 'status' => 'success',
                 'data' => $count
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getListManager(Request $request)
@@ -197,16 +196,12 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
-        $listPrevent = $this->relationshipInterface->getListPreventAndPrevented();
-        $list = Member::where('group_id', $request->group_id)->whereNotIn('user_id', $listPrevent)->where('status', config('member.status.member'))->whereIn('role',[config('member.role.admin'), config('member.role.censor')])->with(['user', 'user.relationship1', 'user.relationship2'])->get();
-        foreach ($list as $item) {
-            if ($item->user->id != Auth::user()->id)
-            $item['user']['count_mutual_friends'] = count($this->relationshipInterface->getMutualFriends($item->user->id));
-        };
+        $list = Member::where('group_id', $request->group_id)->where('status', config('member.status.member'))->whereIn('role', [config('member.role.admin'), config('member.role.censor')])->with(['user', 'user.relationship1', 'user.relationship2'])->get();
+
         if ($list !== null) {
             return response()->json([
                 'status' => 'success',
@@ -215,11 +210,11 @@ class GroupController extends Controller
                     'count' => $list->count(),
                 ],
 
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getListPending(Request $request)
@@ -232,16 +227,12 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
-        $listPrevent = $this->relationshipInterface->getListPreventAndPrevented();
-        $list = Member::where('group_id', $request->group_id)->whereNotIn('user_id', $listPrevent)->where('status', config('member.status.pending'))->with(['user', 'user.relationship1', 'user.relationship2'])->get();
-        foreach ($list as $item) {
-            if ($item->user->id != Auth::user()->id)
-            $item['user']['count_mutual_friends'] = count($this->relationshipInterface->getMutualFriends($item->user->id));
-        };
+        $list = Member::where('group_id', $request->group_id)->where('status', config('member.status.pending'))->with(['user'])->get();
+
         if ($list !== null) {
             return response()->json([
                 'status' => 'success',
@@ -250,11 +241,11 @@ class GroupController extends Controller
                     'count' => $list->count(),
                 ],
 
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getListPrevent(Request $request)
@@ -267,16 +258,12 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
-        $listPrevent = $this->relationshipInterface->getListPreventAndPrevented();
-        $list = Member::where('group_id', $request->group_id)->whereNotIn('user_id', $listPrevent)->where('status', config('member.status.prevent'))->with(['user', 'user.relationship1', 'user.relationship2'])->get();
-        foreach ($list as $item) {
-            if ($item->user->id != Auth::user()->id)
-            $item['user']['count_mutual_friends'] = count($this->relationshipInterface->getMutualFriends($item->user->id));
-        };
+        $list = Member::where('group_id', $request->group_id)->where('status', config('member.status.prevent'))->with(['user', 'user.relationship1', 'user.relationship2'])->get();
+
         if ($list !== null) {
             return response()->json([
                 'status' => 'success',
@@ -285,11 +272,11 @@ class GroupController extends Controller
                     'count' => $list->count(),
                 ],
 
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getListNomarl(Request $request)
@@ -302,16 +289,12 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
-        $listPrevent = $this->relationshipInterface->getListPreventAndPrevented();
-        $list = Member::where('group_id', $request->group_id)->whereNotIn('user_id', $listPrevent)->where('status', config('member.status.member'))->where('role',config('member.role.nomarl'))->with(['user', 'user.relationship1', 'user.relationship2'])->get();
-        foreach ($list as $item) {
-            if ($item->user->id != Auth::user()->id)
-            $item['user']['count_mutual_friends'] = count($this->relationshipInterface->getMutualFriends($item->user->id));
-        };
+        $list = Member::where('group_id', $request->group_id)->where('status', config('member.status.member'))->where('role', config('member.role.nomarl'))->with(['user', 'user.relationship1', 'user.relationship2'])->get();
+
         if ($list !== null) {
             return response()->json([
                 'status' => 'success',
@@ -319,11 +302,11 @@ class GroupController extends Controller
                     'list' => $list,
                 ],
 
-                ]);
+            ]);
         } else
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
     public function getInfo(Request $request)
@@ -336,8 +319,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $group = Group::find($request->group_id);
@@ -349,7 +332,8 @@ class GroupController extends Controller
                         'status' => 'failed',
                         "message" => 'Không tìm thấy group'
                     ]);
-                } else {}
+                } else {
+                }
                 return response()->json([
                     'status' => 'success',
                     "group" => $group,
@@ -372,50 +356,55 @@ class GroupController extends Controller
     {
         $page = intval($request->page) ?? 1;
         $ids = Member::where('user_id', Auth::user()->id)
-        ->where('status', config('member.status.member'))
-        ->whereIn('role', [config('member.role.censor'), config('member.role.admin')])
-        ->pluck('group_id');
-        $list = Group::whereIn('id', $ids)->select('type', 'name', 'id','cover')->offset(($page - 1) * 3)->limit(3)->get();
-        foreach($list as $item) {
+            ->where('status', config('member.status.member'))
+            ->whereIn('role', [config('member.role.censor'), config('member.role.admin')])
+            ->pluck('group_id');
+        $list = Group::whereIn('id', $ids)->select('type', 'name', 'id', 'cover')->get();
+        foreach ($list as $item) {
             $item['count_member'] = Member::where('group_id', $item->id)->where('status', config('member.status.member'))->count();
-
         };
         return response()->json([
             'status' => 'success',
             "group" => $list
         ]);
-
     }
     public function getListGroup(Request $request)
     {
         $page = intval($request->page) ?? 1;
         $ids = Member::where('user_id', Auth::user()->id)
-        ->where('status', config('member.status.member'))
-        ->pluck('group_id');
-        $list = Group::whereIn('id', $ids)->select('type', 'name', 'id','cover')->offset(($page - 1) * 3)->limit(3)->get();
+            ->where('status', config('member.status.member'))
+            ->pluck('group_id');
+        $list = Group::whereIn('id', $ids)->select('type', 'name', 'id', 'cover')->get();
         return response()->json([
             'status' => 'success',
             "group" => $list
         ]);
-
     }
+
+    public function getFullListGroup(Request $request)
+    {
+        $list = Group::get();
+        return response()->json([
+            'status' => 'success',
+            "group" => $list
+        ]);
+    }
+
     public function getListGroupNomarl(Request $request)
     {
         $page = intval($request->page) ?? 1;
         $ids = Member::where('user_id', Auth::user()->id)
-        ->where('status', config('member.status.member'))
-        ->where('role', config('member.role.nomarl'))
-        ->pluck('group_id');
-        $list = Group::whereIn('id', $ids)->select('type', 'name', 'id','cover')->offset(($page - 1) * 3)->limit(3)->get();
-        foreach($list as $item) {
+            ->where('status', config('member.status.member'))
+            ->where('role', config('member.role.nomarl'))
+            ->pluck('group_id');
+        $list = Group::whereIn('id', $ids)->select('type', 'name', 'id', 'cover')->offset(($page - 1) * 3)->limit(3)->get();
+        foreach ($list as $item) {
             $item['count_member'] = Member::where('group_id', $item->id)->where('status', config('member.status.member'))->count();
-
         };
         return response()->json([
             'status' => 'success',
             "group" => $list
         ]);
-
     }
     public function update(Request $request)
     {
@@ -438,8 +427,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
 
@@ -474,15 +463,15 @@ class GroupController extends Controller
                 "message" => 'He thong da co loi xay ra, vui long thu lai',
             ]);
         }
-
     }
 
-    public function delete(Request $request) {
+    public function delete(Request $request)
+    {
         $group_id = $request->id;
-        if ($group = Group::find($group_id)) {
+        if ($group_id = Group::find($group_id)) {
             $admin = Member::where('group_id', $group_id)->where('role', config('member.role.admin'))->orderBy('updated_at')->first();
             if (Auth::user()->id === $admin->user_id) {
-                if ($result = $this->groupInterface->delete($group_id)) {
+                if ($this->groupInterface->delete($group_id)) {
                     return response()->json([
                         'status' => 'success',
                         'message' => 'Xoa group thanh cong'
@@ -499,7 +488,6 @@ class GroupController extends Controller
                     'message' => 'Ban khong co quyen xoa group'
                 ]);
             }
-
         } else {
             return response()->json([
                 'status' => 'failed',
@@ -507,7 +495,8 @@ class GroupController extends Controller
             ]);
         }
     }
-    public function participation(Request $request) {
+    public function participation(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'id' => ['required', 'exists:group,id'],
             'answer' => ['min:0', 'max:3000'],
@@ -519,8 +508,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $user_id = Auth::user()->id;
@@ -565,7 +554,8 @@ class GroupController extends Controller
             }
         }
     }
-    public function outGroup(Request $request) {
+    public function outGroup(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'id' => ['required', 'exists:group,id'],
         ], [
@@ -574,8 +564,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $user_id = Auth::user()->id;
@@ -586,21 +576,21 @@ class GroupController extends Controller
                 $count = Member::where('group_id', $group_id)->where('role', config('member.role.admin'))->count();
                 if ($count > 1) {
                     if ($member->delete())
+                        return response()->json([
+                            'status' => 'success',
+                            'data' => 'Rời nhóm thành công'
+                        ]);
+                } else
+                    return response()->json([
+                        'status' => 'failed',
+                        'message' => 'Nếu bạn rời nhóm, nhóm sẽ không còn quản trị viên, vui lòng chọn quản trị viên trước khi rời nhóm hoặc xóa nhóm'
+                    ]);
+            } else {
+                if ($member->delete())
                     return response()->json([
                         'status' => 'success',
                         'data' => 'Rời nhóm thành công'
                     ]);
-                } else
-                return response()->json([
-                    'status' => 'failed',
-                    'message' => 'Nếu bạn rời nhóm, nhóm sẽ không còn quản trị viên, vui lòng chọn quản trị viên trước khi rời nhóm hoặc xóa nhóm'
-                ]);
-            } else {
-                if ($member->delete())
-                return response()->json([
-                    'status' => 'success',
-                    'data' => 'Rời nhóm thành công'
-                ]);
             }
         }
         return response()->json([
@@ -608,7 +598,8 @@ class GroupController extends Controller
             'message' => 'Yêu cầu thất bại, vui lòng thử lại'
         ]);
     }
-    public function browserMember(Request $request) {
+    public function browserMember(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'group_id' => ['required', 'exists:group,id'],
             'member_id' => ['required', 'exists:users,id'],
@@ -620,8 +611,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $group_id = $request->group_id;
@@ -674,9 +665,9 @@ class GroupController extends Controller
                 "message" => 'Ban khong phai la thanh vien cua nhom'
             ]);
         }
-
     }
-    public function browserPost(Request $request) {
+    public function browserPost(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'post_id' => ['required', 'exists:post,id'],
         ], [
@@ -685,8 +676,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $post_id = $request->post_id;
@@ -696,8 +687,8 @@ class GroupController extends Controller
             return response()->json([
                 'status' => 'failed',
                 "message" => 'Bài viết không tồn tại'
-        ]);
-    }
+            ]);
+        }
         $role_admin = Member::where('group_id', $post->group_id)->where('user_id', $admin)->first()->role ?? null;
         if ($role_admin) {
             if (!in_array($role_admin, [config('member.role.admin'), config('member.role.censor')])) {
@@ -706,7 +697,7 @@ class GroupController extends Controller
                     'message' => 'Ban khong co quyen duyet bài viết'
                 ]);
             } else {
-              if ($post->user_id_browse) {
+                if ($post->user_id_browse) {
                     return response()->json([
                         'status' => 'failed',
                         "message" => 'Bài viết đã được duyệt'
@@ -734,9 +725,9 @@ class GroupController extends Controller
                 "message" => 'Ban khong phai la thanh vien cua nhom'
             ]);
         }
-
     }
-    public function cancelPost(Request $request) {
+    public function cancelPost(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'post_id' => ['required', 'exists:post,id'],
         ], [
@@ -745,8 +736,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $post_id = $request->post_id;
@@ -756,8 +747,8 @@ class GroupController extends Controller
             return response()->json([
                 'status' => 'failed',
                 "message" => 'Bài viết không tồn tại'
-        ]);
-    }
+            ]);
+        }
         $role_admin = Member::where('group_id', $post->group_id)->where('user_id', $admin)->first()->role ?? null;
         if ($role_admin) {
             if (!in_array($role_admin, [config('member.role.admin'), config('member.role.censor')])) {
@@ -766,7 +757,7 @@ class GroupController extends Controller
                     'message' => 'Ban khong co quyen duyet bài viết'
                 ]);
             } else {
-              if ($post->user_id_browse) {
+                if ($post->user_id_browse) {
                     return response()->json([
                         'status' => 'failed',
                         "message" => 'Bài viết đã được duyệt'
@@ -794,9 +785,9 @@ class GroupController extends Controller
                 "message" => 'Ban khong phai la thanh vien cua nhom'
             ]);
         }
-
     }
-    public function kickMember(Request $request) {
+    public function kickMember(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'group_id' => ['required', 'exists:group,id'],
             'member_id' => ['required', 'exists:users,id'],
@@ -808,8 +799,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $group_id = $request->group_id;
@@ -878,7 +869,6 @@ class GroupController extends Controller
                         }
                     }
                 }
-
             }
         } else {
             return response()->json([
@@ -886,10 +876,10 @@ class GroupController extends Controller
                 "message" => 'Ban khong phai la thanh vien cua nhom'
             ]);
         }
-
     }
 
-    public function preventMember(Request $request) {
+    public function preventMember(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'group_id' => ['required', 'exists:group,id'],
             'member_id' => ['required', 'exists:users,id'],
@@ -901,8 +891,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $group_id = $request->group_id;
@@ -986,7 +976,6 @@ class GroupController extends Controller
                         }
                     }
                 }
-
             }
         } else {
             return response()->json([
@@ -994,11 +983,11 @@ class GroupController extends Controller
                 "message" => 'Ban khong phai la thanh vien cua nhom'
             ]);
         }
-
     }
 
 
-    public function cancelPreventMember(Request $request) {
+    public function cancelPreventMember(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'group_id' => ['required', 'exists:group,id'],
             'member_id' => ['required', 'exists:users,id'],
@@ -1010,8 +999,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $group_id = $request->group_id;
@@ -1052,7 +1041,6 @@ class GroupController extends Controller
                         ]);
                     }
                 }
-
             }
         } else {
             return response()->json([
@@ -1060,9 +1048,9 @@ class GroupController extends Controller
                 "message" => 'Ban khong phai la thanh vien cua nhom'
             ]);
         }
-
     }
-    public function assignPermission(Request $request) {
+    public function assignPermission(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'group_id' => ['required', 'exists:group,id'],
             'member_id' => ['required', 'exists:users,id'],
@@ -1077,8 +1065,8 @@ class GroupController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            'message' => $validator->errors()
+                'status' => 'failed',
+                'message' => $validator->errors()
             ]);
         }
         $group_id = $request->group_id;
@@ -1129,10 +1117,8 @@ class GroupController extends Controller
                                 ]);
                             }
                         }
-
                     }
                 }
-
             }
         } else {
             return response()->json([
@@ -1141,4 +1127,102 @@ class GroupController extends Controller
             ]);
         }
     }
+
+    function getListRoleGroup()
+    {
+        $list = RoleGroup::all()->toArray();
+        return response()->json([
+            'status' => 'success',
+            "message" => 'Lay du lieu thanh cong',
+            "data" => $list
+        ]);
+    }
+
+    function updateRoleGroup(Request $request)
+    {
+        $id = $request->id;
+        $roleGroup = $request->roleGroup;
+
+        RoleGroup::where('id', $id)->update(['roleGroup' => $roleGroup]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Cap nhat thanh cong',
+            'data' => $roleGroup
+        ]);
+    }
+
+
+    function createRoleGroup(Request $request)
+    {
+        $newcore = new RoleGroup();
+        $roleGroup = $request->roleGroup ?? null;
+        $newcore->roleGroup = $roleGroup;
+
+
+        RoleGroup::updateOrCreate(['roleGroup' => $roleGroup]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tao moi thanh cong',
+            'data' => $newcore
+        ]);
+    }
+
+    // public function update(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'id' => ['required', 'exists:group,id'],
+    //         'name' => ['min:6', 'max:255'],
+    //         'browse_post' => ['in: 0, 1'],
+    //         'type' => ['in: 2, 1'],
+    //         'regulations' => ['max:3000'],
+    //         'intro' => ['max:3000']
+    //     ], [
+    //         'id.required' => 'Vui long chon group',
+    //         'id.exists' => 'Group khong ton tai',
+    //         'name.min' => 'Ten group phai co it nhat 6 ki tu',
+    //         'name.max' => 'Ten group khong duoc qua 255 ki tu',
+    //         'browse_post.in' => 'Che do phe duyet khong hop le',
+    //         'type.in' => 'Loai nhom khong hop le',
+    //         'intro.max' => 'Vuot qua 3000 ki tu',
+    //         'regulations.max' => 'Vuot qua 3000 ki tu'
+    //     ]);
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => $validator->errors()
+    //         ]);
+    //     }
+
+    //     $user_id = Auth::user()->id;
+    //     $member = Member::where('user_id', $user_id)->where('group_id', $request->id)->first();
+    //     if (($member->role ?? null)  != config('member.role.admin')) {
+    //         return [
+    //             'status' => 'failed',
+    //             'message' => 'Ban khong co quyen chinh sua'
+    //         ];
+    //     }
+    //     $options = [];
+    //     $options['name'] = $request->name ?? '';
+    //     $options['type'] = $request->type ?? 1;
+    //     $options['browse_post'] = $request->browse_post ?? 0;
+    //     $options['regulations'] = $request->regulations ?? '';
+    //     $options['question'] = $request->question ?? '';
+    //     $options['cover'] = $request->cover ?? '';
+    //     $options['intro'] = $request->intro ?? '';
+    //     if ($result = $this->groupInterface->update($request->id, $options)) {
+    //         if ($options['type'] == config('group.type.public')) {
+    //             Member::where('group_id', $request->id)->where('status', config('member.status.pending'))->update(['stauts', config('member.status.member')]);
+    //         }
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'message' => "Cap nhap nhom thanh cong",
+    //             'data' => $result
+    //         ]);
+    //     } else {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             "message" => 'He thong da co loi xay ra, vui long thu lai',
+    //         ]);
+    //     }
+    // }
 }

@@ -10,4 +10,7 @@ interface PostInterface
     public function getListPostBrowse($options);
     public function getCountPost($options);
     public function getListSharePost($id, $page);
+    public function searchPost($options);
+    public function getListPostAdmin($options);
+    public function deletePost($options);
 }

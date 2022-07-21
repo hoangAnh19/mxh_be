@@ -7,7 +7,8 @@
         "watch-poll": "mix watch -- --watch-options-poll=1000",
         "hot": "mix watch --hot",
         "prod": "npm run production",
-        "production": "mix --production"
+        "production": "mix --production",
+        "pretty": "prettier --write \"./**/*.{js,jsx,php}\""
     },
     "devDependencies": {
         "axios": "^0.21",
@@ -18,6 +19,7 @@
     "dependencies": {
         "express": "^4.17.1",
         "ioredis": "^4.28.4",
+        "laravel-echo": "^1.12.1",
         "redis": "^4.0.1",
         "socket.io": "^4.4.1"
     }

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,10 @@ class   User extends Authenticatable  implements JWTSubject, MustVerifyEmail
      *
      * @var string[]
      */
-    protected $table='users';
+    protected $table = 'users';
+    protected $fillable = [
+        'avatar', 'cover'
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -52,6 +56,7 @@ class   User extends Authenticatable  implements JWTSubject, MustVerifyEmail
     {
         return $this->belongsToMany('App\Models\Member', 'user_id', 'group_id');
     }
+    
     public function relationship1()
     {
         return $this->hasMany('App\Models\Relationship', 'user_id_1', 'id')->where('user_id_2', Auth::user()->id);
@@ -61,10 +66,8 @@ class   User extends Authenticatable  implements JWTSubject, MustVerifyEmail
         return $this->hasMany('App\Models\Relationship', 'user_id_2', 'id')->where('user_id_1', Auth::user()->id);
     }
 
-    public function posts()
-    {
-        return $this->hasMany('App\Post', 'user_id', 'id');
-    }
-
-
+    // public function posts()
+    // {
+    //     return $this->hasMany('App\Post', 'user_id', 'id');
+    // }
 }
