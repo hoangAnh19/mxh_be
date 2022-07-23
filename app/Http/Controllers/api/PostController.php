@@ -43,11 +43,43 @@ class PostController extends Controller
         }
         $image = $request->file('image');
         $folderName = 'tmp_images';
-        $imageName = uniqid() . time() . '.' . $image->getClientOriginalExtension();
+        $imageName = time() . '.' . $image->getClientOriginalExtension();
         if ($image->move(public_path($folderName), $imageName))
             return response()->json([
                 'status' => 'success',
                 "data" => $imageName
+            ]);
+        else
+            return response()->json([
+                'status' => 'failed',
+                "message " => 'Đã có lỗi xảy ra, vui lòng thử lại'
+            ]);
+    }
+
+    public function uploadFile(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            ['file' => ['required', 'file']],
+            [
+                'file.required' => 'file không được trống',
+                'file.file' => 'file không hợp lệ '
+            ]
+        );
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'falied',
+                'message' => json_decode($validator->errors())
+            ]);
+        }
+        $file = $request->file('file');
+        $forderName = 'documents';
+        $getFileName = $file->getClientOriginalName();
+        $newFile = $getFileName . time() . '.' . $file->getClientOriginalExtension();
+        if ($file->move(public_path($forderName), $newFile))
+            return response()->json([
+                'status' => 'success',
+                'data' => $newFile
             ]);
         else
             return response()->json([

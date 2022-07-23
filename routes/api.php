@@ -105,6 +105,8 @@ Route::group(['middleware' => ['auth:api']], function () {
 
     Route::get('post/get_count', [PostController::class, 'getCountPost']);
     Route::post('image/upload', [PostController::class, 'uploadImage'])->name('post.uploadImage');
+    Route::post('file/upload', [PostController::class, 'uploadFile'])->name('post.uploadFile');
+
     Route::post('post/create', [PostController::class, 'create'])->name('post.create');
     Route::post('post/update', [PostController::class, 'update'])->name('post.update'); //ko co
     Route::get('post/get_list', [PostController::class, 'getList'])->name('post.getList');

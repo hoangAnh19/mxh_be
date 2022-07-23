@@ -113,20 +113,12 @@ class UserController extends Controller
                         'role' => 'user'
                     ]);
                 } else {
-                    if ($token2) {
+                    if ($token1) {
                         return response()->json([
                             'status' => 'success',
-                            'access_token' => $token2,
+                            'access_token' => $token1,
                             'role' => 'user'
                         ]);
-                    } else {
-                        if ($token1) {
-                            return response()->json([
-                                'status' => 'success',
-                                'access_token' => $token2,
-                                'role' => 'user'
-                            ]);
-                        }
                     }
                 }
             }
@@ -262,7 +254,7 @@ class UserController extends Controller
         $options['password'] = $request->password;
         $options['bird_day'] = $request->bird_day;
         $options['gender'] = $request->gender;
-        $options['level'] = 2;
+        $options['level'] = 1;
 
         $result = $this->userInterface->create($options);
         return response()->json([
