@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Events\CommentEven;
+use App\Events\CommentEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rule;
@@ -11,9 +13,10 @@ use App\Repositories\Comment\CommentInterface;
 use App\Models\Post;
 use App\Models\Member;
 use App\Models\Group;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use Image;
 use Storage;
+
 
 
 class CommentController extends Controller
@@ -23,7 +26,8 @@ class CommentController extends Controller
         $this->commentInterface = $commentInterface;
         $this->postInterface = $postInterface;
     }
-    public function getComment(Request $request) {
+    public function getComment(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'post_id' => ['exists:post,id'],
             'comment_id' => ['exists:comment,id'],
@@ -32,8 +36,8 @@ class CommentController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            "message" => json_decode($validator->errors())
+                'status' => 'failed',
+                "message" => json_decode($validator->errors())
             ]);
         }
         $options = [];
@@ -43,16 +47,18 @@ class CommentController extends Controller
         if ($result = $this->commentInterface->getComment($options)) {
             return response()->json([
                 'status' => 'success',
-                "data" => $result
-                ]);
+                "data" => $result,
+                "asdasd" => $this->commentInterface->getComment($options),
+            ]);
         } else {
             return response()->json([
                 'status' => 'failed',
                 "message" => 'Đã có lỗi xảy ra, vui lòng thử lại'
-                ]);
+            ]);
         }
     }
-    public function create(Request $request) {
+    public function create(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'post_id' => ['exists:post,id'],
             'comment_id' => ['exists:comment,id']
@@ -62,8 +68,8 @@ class CommentController extends Controller
         ]);
         if ($validator->fails()) {
             return response()->json([
-            'status' => 'failed',
-            "message" => json_decode($validator->errors())
+                'status' => 'failed',
+                "message" => json_decode($validator->errors())
             ]);
         }
         $options = [];
@@ -75,7 +81,7 @@ class CommentController extends Controller
             return response()->json([
                 'status' => 'failed',
                 "message" => "Vui lòng chọn nơi để bình luận"
-                ]);
+            ]);
         }
         $options['level'] = config('post.level.post');
         $options['data'] = $request->data ?? '';
@@ -89,17 +95,21 @@ class CommentController extends Controller
         $post = $this->postInterface->getListPost(["post_id" => $options['post_id']]);
         if ($post) {
             if ($result = $this->commentInterface->create($options)) {
+
+                event(
+                    $e = new CommentEvent($result)
+                );
                 return response()->json([
                     'status' => 'success',
                     'message' => "Bình luận thành công",
                     'data' => $result
                 ]);
-                } else {
-                    return response()->json([
-                        'status' => 'failed',
-                        "message" => 'He thong da co loi xay ra, vui long thu lai',
-                    ]);
-                }
+            } else {
+                return response()->json([
+                    'status' => 'failed',
+                    "message" => 'He thong da co loi xay ra, vui long thu lai',
+                ]);
+            }
         } else {
             return response()->json([
                 'status' => 'failed',
@@ -109,5 +119,4 @@ class CommentController extends Controller
         // $images = $request->images ?? null;
 
     }
-
 }

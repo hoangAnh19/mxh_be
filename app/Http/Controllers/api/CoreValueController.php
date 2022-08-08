@@ -12,11 +12,12 @@ class CoreValueController extends Controller
     function getCoreValue()
     {
         $core = CoreValue::get();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'lay danh sach thanh cong',
-            'data' => $core
-        ]);
+        return $core;
+        // return response()->json([
+        //     'status' => 'success',
+        //     'message' => 'lay danh sach thanh cong',
+        //     'data' => $core
+        // ]);
     }
 
     function createCoreValue(Request $request)

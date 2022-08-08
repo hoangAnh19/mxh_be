@@ -25,63 +25,12 @@ class RelationshipController extends Controller
 
 
 
-    public function listFriend(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => ['exists:users,id'],
-        ], [
-            'user_id.exists' => 'Tai khoan khong ton tai',
-        ]);
-        if ($validator->fails()) {
-            return [
-                'status' => 'failed',
-                "errors " => json_decode($validator->errors())
-            ];
-        }
-        $user_id = $request->user_id ?? Auth::user()->id;
-        $page = $request->page ?? 1;
-        $relationship = $this->relationshipInterface->getRelationship(Auth::user()->id, $user_id);
-        if ($relationship && ($relationship->type_friend == config('relationship.type_friend.prevent') || $relationship->type_friend == config('relationship.type_friend.prevented'))) {
-            return [
-                'status' => 'failed',
-                'message' => 'Tai khoan khong ton tai',
-            ];
-        } else {
-            $user = User::find($user_id);
-            if ($user_id == Auth::user()->id) {
-                $ids = $this->relationshipInterface->getListFriend($user_id, $page, 18);
-                $list = $this->userInterface->getListUserByIds($ids, null);
-                foreach ($list as $item) {
-                    if ($item->id != Auth::user()->id)
-                        $item['count_mutual_friends'] = count($this->relationshipInterface->getMutualFriends($item->id));
-                };
-                return [
-                    'status' => 'success',
-                    'data' => $list
-                ];
-            } else {
-                return [
-                    'status' => 'success',
-                    'data'  => []
-                ];
-            }
-        }
-    }
 
 
-    public function listFriend1()
-    {
-        $list = $this->relationshipInterface->getListFriend1();
-        return [
-            'status' => 'success',
-            'data' => $list
-        ];
-    }
-
-    public function listFriendBirthday()
+    public function listUserBirthday()
     {
         try {
-            $list = $this->relationshipInterface->getListFriend1();
+            $list = $this->relationshipInterface->getlistUser();
             return [
                 'status' => 'success',
                 'data' => $list
@@ -269,10 +218,10 @@ class RelationshipController extends Controller
             }
         }
     }
-    public function listFriendSuggestions(Request $request)
+    public function listUserSuggestions(Request $request)
     {
         $page = $request->page ?? 1;
-        $ids = $this->relationshipInterface->getListFriendSuggestions($page);
+        $ids = $this->relationshipInterface->getlistUserSuggestions($page);
         $list = $this->userInterface->getListUserByIds($ids, null);
         foreach ($list as $item) {
             if ($item->id != Auth::user()->id)

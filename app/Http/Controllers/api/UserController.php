@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use App\Repositories\User\UserInterface;
-use App\Repositories\Relationship\RelationshipInterface;
 use App\Repositories\Chat\ChatInterface;
 use App\Models\User;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -16,7 +15,6 @@ use Image;
 use Storage;
 use Illuminate\Support\Facades\Hash;
 use App\Events\OnlineEvent;
-use App\Models\Relationship;
 use Google\Service\StreetViewPublish\Level;
 use SebastianBergmann\Environment\Console;
 use Illuminate\Foundation\Auth\ResetsPasswords;
@@ -28,10 +26,9 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    public function __construct(UserInterface $userInterface, RelationshipInterface $relationshipInterface, ChatInterface $chatInterface)
+    public function __construct(UserInterface $userInterface, ChatInterface $chatInterface)
     {
         $this->userInterface = $userInterface;
-        $this->relationshipInterface  = $relationshipInterface;
         $this->chatInterface  = $chatInterface;
     }
     public function online(Request $request)
@@ -175,7 +172,7 @@ class UserController extends Controller
         }
     }
 
-    public function getInfo(Request $request)
+    public function getUser(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'user_id' => ['required', 'exists:users,id'],
@@ -446,5 +443,16 @@ class UserController extends Controller
                 'errors' => ["loser" => 'Cap nhap that bai']
             ]);
         }
+    }
+
+
+    public function listUser(Request $request)
+    {
+        $page = $request->page ?? 1;
+        $list = $this->userInterface->getlistUser($page);
+        return [
+            'status' => 'success',
+            'data' => $list
+        ];
     }
 }

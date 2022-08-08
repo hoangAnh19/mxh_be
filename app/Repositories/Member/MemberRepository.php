@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Repositories\Member;
+
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\User;
@@ -7,7 +9,8 @@ use App\Models\Member;
 
 class MemberRepository implements MemberInterface
 {
-    public function create($options) {
+    public function create($options)
+    {
         $member = new Member();
         if (isset($options['group_id'])) {
             $member->group_id = $options['group_id'];
@@ -27,10 +30,11 @@ class MemberRepository implements MemberInterface
         if ($data = $member->save()) {
             return $member;
         } else
-        return null;
+            return null;
     }
 
-    public function update($id, $options) {
+    public function update($id, $options)
+    {
         $member = Member::find($id);
         if (isset($options['role'])) {
             $member->role = $options['role'];
@@ -42,7 +46,8 @@ class MemberRepository implements MemberInterface
             return $data;
         } else return null;
     }
-    public function getListGroupId() {
+    public function getListGroupId()
+    {
         $user_id = Auth::user()->id;
         return Member::where('user_id', $user_id)->where('status', config('member.status.public'))->pluck('group_id');
     }

@@ -34,11 +34,11 @@ class OnlineEvent implements ShouldBroadcast
     public function broadcastOn()
     {
         // return new PrivateChannel('channel-name');
-        return ["online_"];
+        return ["online_channel"];
     }
     public function broadcastAs()
     {
         // return new PrivateChannel('channel-name');
-        return "online";
+        return "onlineEvent";
     }
 }

@@ -146,4 +146,11 @@ class UserRepository implements UserInterface
         if ($user->save())
             return $user;
     }
+
+    public function getlistUser($page)
+    {
+        $sumPage = User::all()->count();
+        $listUser = User::where('level', '!=', '5')->offset(($page - 1) * 6)->limit(6)->orderBy('level', 'desc')->get();
+        return [$listUser, $sumPage];
+    }
 }

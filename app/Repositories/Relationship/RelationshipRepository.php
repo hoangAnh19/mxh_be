@@ -10,9 +10,9 @@ use App\Models\Relationship;
 class RelationshipRepository implements RelationshipInterface
 {
 
-    public function getListFriend1()
+    public function getlistUser()
     {
-        $listFriend = User::where('email', '!=', 'admin123@gmail.com')->get();
-        return $listFriend;
+        $listUser = User::where('email', '!=', 'admin123@gmail.com')->get();
+        return $listUser;
     }
 }

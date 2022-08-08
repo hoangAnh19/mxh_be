@@ -578,18 +578,18 @@ class GroupController extends Controller
                     if ($member->delete())
                         return response()->json([
                             'status' => 'success',
-                            'data' => 'Rời nhóm thành công'
+                            'data' => 'Rời phòng/ban thành công'
                         ]);
                 } else
                     return response()->json([
                         'status' => 'failed',
-                        'message' => 'Nếu bạn rời nhóm, nhóm sẽ không còn quản trị viên, vui lòng chọn quản trị viên trước khi rời nhóm hoặc xóa nhóm'
+                        'message' => 'Nếu bạn rời phòng/ban, phòng/ban sẽ không còn quản trị viên, vui lòng chọn quản trị viên trước khi rời phòng/ban hoặc xóa phòng/ban'
                     ]);
             } else {
                 if ($member->delete())
                     return response()->json([
                         'status' => 'success',
-                        'data' => 'Rời nhóm thành công'
+                        'data' => 'Rời phòng/ban thành công'
                     ]);
             }
         }

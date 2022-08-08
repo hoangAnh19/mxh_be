@@ -12,4 +12,5 @@ interface UserInterface
     public function searchUser($user_name);
     public function banUser($options);
     public function assignRole($user_id, $role);
+    public function getlistUser($page);
 }

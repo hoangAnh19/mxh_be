@@ -7,5 +7,5 @@ interface RelationshipInterface
 
 
 
-    public function getListFriend1();
+    public function getlistUser();
 }

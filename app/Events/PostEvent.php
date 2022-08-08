@@ -9,8 +9,8 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-// use App\Models\Chattest;
-class ChatEvent implements ShouldBroadcast
+
+class PostEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -34,11 +34,10 @@ class ChatEvent implements ShouldBroadcast
     public function broadcastOn()
     {
         // return new PrivateChannel('channel-name');
-        return ["chat"];
+        return  new Channel('post_channel');
     }
     public function broadcastAs()
     {
-        // return new PrivateChannel('channel-name');
-        return "messageEvent";
+        return 'postEvent';
     }
 }

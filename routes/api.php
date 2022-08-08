@@ -10,6 +10,7 @@ use App\Http\Controllers\api\PostController;
 use App\Http\Controllers\api\CommentController;
 use App\Http\Controllers\api\ChatController;
 use App\Http\Controllers\api\CoreValueController;
+use App\Http\Controllers\api\NotificationController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 
@@ -24,11 +25,13 @@ use Illuminate\Support\Facades\Mail;
 |
 */
 // Auth::routes(['verify' => true]);
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-Route::post('login', [UserController::class, 'login'])->name('user.login');
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
+
+
 Route::post('register', [UserController::class, 'create'])->name('user.register');
+Route::post('login', [UserController::class, 'login'])->name('user.login');
 Route::post('logoff', [UserController::class, 'logoff'])->name('user.logoff');
 Route::post('test', [UserController::class, 'test'])->name('user.logoffs');
 
@@ -46,23 +49,26 @@ Route::group([
 });
 
 
+// Route::group(['middleware' => ['auth:api']], function () {
 Route::group(['middleware' => ['auth:api']], function () {
+
+
+
     Route::get('userInfo', function (Request $request) {
         return $request->user();
     });
     // USER
     Route::put('user', [UserController::class, 'update'])->name('user.update');
-    Route::get('user', [UserController::class, 'getInfo'])->name('user.getInfo');
+    Route::get('user', [UserController::class, 'getUser'])->name('user.getUser');
     Route::get('user/searchUser', [UserController::class, 'searchUser']);
     Route::put('user/uploadAvatar', [UserController::class, 'uploadAvatar'])->name('user.uploadAvatar');
-
+    Route::get('user/list_user', [UserController::class, 'listUser'])->name('user.list_user');
 
     // Relationship
     Route::group(['prefix' => 'relationship'], function () {
-        Route::get('list_friend', [RelationshipController::class, 'listFriend'])->name('user.get_relationship');
-        Route::get('list_friend1', [RelationshipController::class, 'listFriend1'])->name('user.get_relationship');
 
-        Route::get('list_friend_birth_day', [RelationshipController::class, 'listFriendBirthday']);
+
+        Route::get('list_user_birth_day', [RelationshipController::class, 'listUserBirthday']);
     });
 
 
@@ -110,6 +116,8 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::post('post/create', [PostController::class, 'create'])->name('post.create');
     Route::post('post/update', [PostController::class, 'update'])->name('post.update'); //ko co
     Route::get('post/get_list', [PostController::class, 'getList'])->name('post.getList');
+    Route::get('post/get_list_search', [PostController::class, 'getListSearch'])->name('post.getListSearch');
+
     Route::get('post/get_list_admin', [PostController::class, 'getListPostAdmin'])->name('post.getListPostAdmin');
 
     Route::get('post/get_list_post_browse', [PostController::class, 'getListPostBrowse']);
@@ -128,6 +136,13 @@ Route::group(['middleware' => ['auth:api']], function () {
     //Comment
     Route::post('comment/create', [CommentController::class, 'create']);
     Route::get('comment/get', [CommentController::class, 'getComment']);
+
+    //Notification
+    Route::get('notification/get', [NotificationController::class, 'getNoti']);
+    Route::post('notification/create', [NotificationController::class, 'createNoti']);
+    Route::post('notification/update', [NotificationController::class, 'updateNoti']);
+
+
 
     //Chat
     Route::post('chat/send', [ChatController::class, 'sendMessage']);

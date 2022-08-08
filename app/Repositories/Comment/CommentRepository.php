@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Repositories\Comment;
+
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Repositories\Relationship\RelationshipInterface;
@@ -11,16 +13,18 @@ use App\Models\UserViewComment;
 
 class CommentRepository implements CommentInterface
 {
-    public function __construct(RelationshipInterface $relationshipInterface, MemberInterface $memberInterface,Comment $comment )
+    public function __construct(RelationshipInterface $relationshipInterface, MemberInterface $memberInterface, Comment $comment)
     {
         $this->relationshipInterface = $relationshipInterface;
         $this->memberInterface = $memberInterface;
         $this->comment = $comment;
     }
-    public function create($options) {
+    public function create($options)
+    {
         return $this->comment::create($options);
     }
-    public function getComment($option) {
+    public function getComment($option)
+    {
         $query = Comment::query();
         if (isset($option['post_id'])) {
             $query->where('post_id', $option['post_id']);
@@ -29,11 +33,10 @@ class CommentRepository implements CommentInterface
         }
         $query->orderBy('id', 'desc');
         if ($option['page'] == 1)
-         $query->offset(0)->limit(2);
-        else  $query->offset(2 +($option['page']-2)* 5)->limit(5);
+            $query->offset(0)->limit(2);
+        else  $query->offset(2 + ($option['page'] - 2) * 5)->limit(5);
         return $query->with('user')->get();
     }
-
 }
 
 // }

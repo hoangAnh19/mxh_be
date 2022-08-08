@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Events\PostEvent;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Validation\Rule;
@@ -10,6 +11,7 @@ use App\Repositories\Post\PostInterface;
 use App\Models\Post;
 use App\Models\Member;
 use App\Models\Group;
+use App\Models\Notification;
 use App\Models\User;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Illuminate\Support\Facades\Validator;
@@ -143,6 +145,18 @@ class PostController extends Controller
         $options['user_id_browse'] = 0;
         $options['src_images'] = json_encode($request->images ?? '');
 
+        if ($request->user_id_2 ?? null) {
+            $noti = new Notification();
+
+            $noti->user_id_1 = $request->user_id_2;
+            $noti->user_id_2 =  Auth::user()->id;
+            // $noti->post_id = $request->post_id;
+            $noti->type = 4;
+            $noti->seen = 0;
+            $noti->post_id = 9999;
+            $noti->save();
+        }
+
         if ($options['group_id']) {
             if ($options['user_id_2']) {
                 return response()->json([
@@ -168,6 +182,9 @@ class PostController extends Controller
 
         // $images = $request->images ?? null;
         if ($result = $this->postInterface->create($options)) {
+            event(
+                $e = new PostEvent($result)
+            );
             return response()->json([
                 'status' => 'success',
                 'message' => "Tao bai viet thanh cong",
@@ -181,10 +198,6 @@ class PostController extends Controller
             ]);
         }
     }
-
-
-
-
 
 
 
@@ -340,6 +353,7 @@ class PostController extends Controller
         $options['user_id'] = $request->user_id ?? null;
         $options['group_id'] = $request->group_id ?? null;
         $options['page'] = intval($request->page) ?? 1;
+
         $user_id = Auth::user()->id;
         if ($options['group_id']) {
             $group_type = Group::find($options['group_id'])->type;
@@ -363,6 +377,27 @@ class PostController extends Controller
             return response()->json([
                 'status' => 'failed',
                 "message" => 'He thong da co loi xay ra, vui long thu lai',
+            ]);
+        }
+    }
+    public function getListSearch(Request $request)
+    {
+        $options = [];
+        $options['group_id'] = $request->group_id ?? null;
+        $options['keySearch'] = $request->keySearch ?? null;
+        $options['page'] = intval($request->page) ?? 1;
+
+
+
+        if ($result = $this->postInterface->getListPostSearch($options)) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $result
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                "message" => $options['keySearch'],
             ]);
         }
     }
@@ -433,25 +468,13 @@ class PostController extends Controller
 
     public function searchPost(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'user_name' => ['max:30'],
 
-        ], [
-            'user_name.max' => 'Tên không hợp lệ',
+        $options = [];
+        $options['data'] = $request->keySearch ?? null;
+        $options['group_id'] = $request->group_id ?? null;
 
-        ]);
+        $list = $this->postInterface->searchpost($options);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'failed',
-                'errors' => $validator->errors()
-            ]);
-        }
-
-        $data = $request->data ?? null;
-        if ($data) {
-            $list = $this->postInterface->searchpost($data);
-        }
         if ($list) return response()->json([
             'status' => 'success',
             'data' => $list
@@ -464,40 +487,9 @@ class PostController extends Controller
 
     public function getListPostAdmin(Request $request)
     {
-        // return json_encode(['12'=> '14']);
-        // hieenj tao chua co truong hop kiem tra, tag nguoi khong thuoc group, user_id_2, nguoi tag, dang tunog , group phai co mqh
-        $validator = Validator::make($request->all(), [
-            'user_id' => ['exists:users,id'],
-            'group_id' => ['exists:group,id'],
-        ], [
-            'user_id.exists' => 'Tai khoan khong ton tai',
-            'group_id.exists' => 'Group khong ton tai',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'failed',
-                "message " => json_decode($validator->errors())
-            ]);
-        }
-        $options = [];
-        $options['get_image'] = $request->get_image ?? null;
-        $options['user_id'] = $request->user_id ?? null;
-        $options['group_id'] = $request->group_id ?? null;
-        $options['page'] = intval($request->page) ?? 1;
-        $user_id = Auth::user()->id;
-        if ($options['group_id']) {
-            $group_type = Group::find($options['group_id'])->type;
-            if ($group_type == 2) {
-                $member = Member::where('user_id', Auth::user()->id)->where('group_id', $options['group_id'])->first();
-                if (!$member) {
-                    return response()->json([
-                        'status' => 'failed',
-                        "message" => 'Bạn không là thành viên của group',
-                    ]);
-                }
-            }
-        }
-        if ($result = $this->postInterface->getListPostAdmin($options)) {
+        $page = $request->page ?? 1;
+
+        if ($result = $this->postInterface->getListPostAdmin($page)) {
             return response()->json([
                 'status' => 'success',
                 'data' => $result

@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Schema;
 use App\Repositories\Like\LikeInterface;
 
 use App\Repositories\Like\LikeRepository;
+use App\Repositories\Notification\NotiInterface;
+use App\Repositories\Notification\NotiRepository;
+
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -31,15 +35,14 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         //
-        $this->app->bind(GroupInterface::class,GroupRepository::class);
-        $this->app->bind(MemberInterface::class,MemberRepository::class);
-        $this->app->bind(UserInterface::class,UserRepository::class);
-        $this->app->bind(RelationshipInterface::class,RelationshipRepository::class);
-        $this->app->bind(PostInterface::class,PostRepository::class);
-        $this->app->bind(LikeInterface::class,LikeRepository::class);
-        $this->app->bind(ChatInterface::class,ChatRepository::class);
-        $this->app->bind(CommentInterface::class,CommentRepository::class);
-
+        $this->app->bind(GroupInterface::class, GroupRepository::class);
+        $this->app->bind(MemberInterface::class, MemberRepository::class);
+        $this->app->bind(UserInterface::class, UserRepository::class);
+        $this->app->bind(RelationshipInterface::class, RelationshipRepository::class);
+        $this->app->bind(PostInterface::class, PostRepository::class);
+        $this->app->bind(LikeInterface::class, LikeRepository::class);
+        $this->app->bind(ChatInterface::class, ChatRepository::class);
+        $this->app->bind(CommentInterface::class, CommentRepository::class);
     }
 
     /**
