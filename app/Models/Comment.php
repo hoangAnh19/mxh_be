@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class Comment extends Model
 {
-    protected $table='comment';
+    protected $table = 'comment';
     use HasFactory;
     protected $fillable = [
         'user_id',
@@ -18,18 +18,14 @@ class Comment extends Model
         'data',
         'src_images',
     ];
-    public $listPrevent=[];
-    // public function group()
-    // {
-    //     return $this->hasOne('App\Models\Group', 'id', 'group_id')->select('id', 'name', 'type','cover');
-    // }
+
     public function answer_comment()
     {
-        return $this->hasMany('App\Models\Comment', 'comment_id', 'id')->whereNull('post_id')->whereNotIn('user_id', $this->listPrevent);
+        return $this->hasMany('App\Models\Comment', 'comment_id', 'id')->whereNull('post_id');
     }
     public function user()
     {
-        return $this->hasOne('App\Models\User', 'id', 'user_id')->select('id', 'first_name', 'last_name','avatar');
+        return $this->hasOne('App\Models\User', 'id', 'user_id')->select('id', 'first_name', 'last_name', 'avatar');
     }
     // public function user_2()
     // {

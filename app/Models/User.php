@@ -56,15 +56,7 @@ class   User extends Authenticatable  implements JWTSubject, MustVerifyEmail
     {
         return $this->belongsToMany('App\Models\Member', 'user_id', 'group_id');
     }
-    
-    public function relationship1()
-    {
-        return $this->hasMany('App\Models\Relationship', 'user_id_1', 'id')->where('user_id_2', Auth::user()->id);
-    }
-    public function relationship2()
-    {
-        return $this->hasMany('App\Models\Relationship', 'user_id_2', 'id')->where('user_id_1', Auth::user()->id);
-    }
+
 
     // public function posts()
     // {

@@ -23,15 +23,3 @@ class NotiRepository implements NotiInterface
         return $query->with('user_2')->get();
     }
 }
-
-// }
-// $options['user_id'] = Auth::user()->id;
-// $options['user_id_2'] = $request->user_id_2 ?? null;
-// $options['group_id'] = $request->group_id ?? null;
-// $options['post_id'] = $request->post_id ?? null;
-// $options['type_post'] = $request->type_post ?? config('post.type_post.nomarl');
-// $options['type_show'] = $request->type_show ?? config('post.type_show.public');
-// $options['data'] = $request->data ?? null;
-// $options['user_id_tags'] = $request->user_id_tags ?? null;
-// $images = $request->images ?? null;
-// $options['src_images'] = [];

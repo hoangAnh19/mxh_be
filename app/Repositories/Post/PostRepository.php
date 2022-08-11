@@ -4,7 +4,6 @@ namespace App\Repositories\Post;
 
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use App\Repositories\Relationship\RelationshipInterface;
 use App\Repositories\Member\MemberInterface;
 use App\Models\User;
 use App\Models\Post;
@@ -15,9 +14,8 @@ use App\Models\UserViewPost;
 
 class PostRepository implements PostInterface
 {
-    public function __construct(RelationshipInterface $relationshipInterface, MemberInterface $memberInterface)
+    public function __construct(MemberInterface $memberInterface)
     {
-        $this->relationshipInterface = $relationshipInterface;
         $this->memberInterface = $memberInterface;
     }
 
@@ -29,13 +27,7 @@ class PostRepository implements PostInterface
     public function update($id, $options)
     {
         $post = Post::find($id);
-        if (isset($options['type_post'])) {
-            $post->type_post = $options['type_post'];
-        };
 
-        if (isset($options['type_show'])) {
-            $post->type_show = $options['type_show'];
-        };
         if (isset($options['data'])) {
             $post->data = $options['data'];
         };
@@ -74,7 +66,7 @@ class PostRepository implements PostInterface
             });
 
             /**
-             * ! get post for group
+             *
              */
         } else if ($options['group_id'] ?? null) {
             $post->where('group_id', $options['group_id']);
@@ -137,6 +129,27 @@ class PostRepository implements PostInterface
 
 
 
+    public function getListSearchAdmin($options)
+    {
+
+        $post = Post::query();
+        if ($options['group_id']) {
+            $post->orderBy('created_at', 'asc')->where('group_id', $options['group_id'])
+                ->with('user', 'user_2', 'isLike', 'post_share', 'post_share.user', 'post_share.user_2')
+                ->withCount('like', 'share', 'comment')->where('data', 'like', '%' . $$options['data'] . '%');
+            return $post->get();
+        } else {
+            $post->orderBy('created_at', 'asc')
+                ->with('user', 'user_2', 'isLike', 'post_share', 'post_share.user', 'post_share.user_2')
+                ->withCount('like', 'share', 'comment')->where('data', 'like', '%' . $$options['data'] . '%');
+            return $post->get();
+        }
+    }
+
+
+
+
+
 
 
     public function getListPostBrowse($options)
@@ -155,7 +168,7 @@ class PostRepository implements PostInterface
         }
         $page = $options['page'] ?? 1;
         $post->orderBy('created_at', 'desc')->with('user', 'user_2', 'isLike', 'post_share', 'post_share.user', 'post_share.user_2');
-        $post->offset(6 + ($page - 2) * 8)->limit(8);
+        $post->offset(($page - 1) * 8)->limit(8);
         return $post->get();
     }
 
@@ -243,22 +256,7 @@ class PostRepository implements PostInterface
     }
 
 
-    public function searchPost($options)
-    {
 
-        $post = Post::query();
-        if ($options['group_id']) {
-            $post->orderBy('created_at', 'asc')->where('group_id', $options['group_id'])
-                ->with('user', 'user_2', 'isLike', 'post_share', 'post_share.user', 'post_share.user_2')
-                ->withCount('like', 'share', 'comment')->where('data', 'like', '%' . $$options['data'] . '%');
-            return $post->get();
-        } else {
-            $post->orderBy('created_at', 'asc')
-                ->with('user', 'user_2', 'isLike', 'post_share', 'post_share.user', 'post_share.user_2')
-                ->withCount('like', 'share', 'comment')->where('data', 'like', '%' . $$options['data'] . '%');
-            return $post->get();
-        }
-    }
 
     public function getListPostAdmin($page)
     {

@@ -14,27 +14,19 @@ io.on("error", function (socket) {
     console.log(socket);
 });
 io.on("connection", function (socket) {
-    console.log("Có người vừa kết nối");
+    console.log("Có người vừa kết nối", socket.id);
+    console.log("list online", this.list_online);
     socket.on("disconnect", () => {
         console.log("có người vừa ngắt kết nối", socket.id); // "ping timeout"
 
-        id = JSON.parse(
-            Buffer.from(socket.handshake.auth.jwt.split(".")[1], "base64")
-        ).sub;
-        // console.log("-------------------");
-        // console.log(id);
-        // console.log(list_online[id]);
         if (!list_online[id]) return;
-        list_online[id].forEach((idClient, index) => {
-            // console.log(idClient, socket.id);
-            if (idClient === socket.id) {
+        list_online[id].forEach((clientId, index) => {
+            if (clientId === socket.id) {
                 list_online[id].splice(index, 1);
                 return;
             }
         });
         if (!list_online[id].length) {
-            list_online[id] = null;
-
             (list_user[id] ?? []).forEach((user_id) => {
                 if (list_online[user_id]) {
                     list_online[user_id].forEach((clientId) => {
@@ -90,7 +82,6 @@ redis.on("pmessage", function (partner, channel, message) {
             list.forEach((user_id) => {
                 if (list_online[user_id] && list_online[user_id].length) {
                     list_online[user_id].forEach((clientId) => {
-                        // console.log(channel + ":" + message.event);
                         io.to(clientId).emit(
                             channel + ":" + message.event,
                             message.data.message.user
@@ -109,5 +100,4 @@ redis.on("pmessage", function (partner, channel, message) {
         default:
             break;
     }
-    // console.log(list_online);
 });

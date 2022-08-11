@@ -21,9 +21,7 @@ use Storage;
 
 class PostController extends Controller
 {
-    private $type_post = array(1, 2, 3, 4, 5, 6);
-    private $type_show = array(1, 2, 3, 4, 5);
-    private $level = array(0, 1, 2);
+
     public function __construct(PostInterface $postInterface)
     {
         $this->postInterface = $postInterface;
@@ -44,7 +42,7 @@ class PostController extends Controller
             ]);
         }
         $image = $request->file('image');
-        $folderName = 'tmp_images';
+        $folderName = 'file_upload';
         $imageName = time() . '.' . $image->getClientOriginalExtension();
         if ($image->move(public_path($folderName), $imageName))
             return response()->json([
@@ -57,6 +55,8 @@ class PostController extends Controller
                 "message " => 'Đã có lỗi xảy ra, vui lòng thử lại'
             ]);
     }
+
+
 
     public function uploadFile(Request $request)
     {
@@ -75,7 +75,7 @@ class PostController extends Controller
             ]);
         }
         $file = $request->file('file');
-        $forderName = 'documents';
+        $forderName = 'file_upload';
         $getFileName = $file->getClientOriginalName();
         $newFile = $getFileName . time() . '.' . $file->getClientOriginalExtension();
         if ($file->move(public_path($forderName), $newFile))
@@ -94,97 +94,43 @@ class PostController extends Controller
 
     public function create(Request $request)
     {
-        // hieenj tao chua co truong hop kiem tra, tag nguoi khong thuoc group, user_id_2, nguoi tag, dang tunog , group phai co mqh
-        $validator = Validator::make($request->all(), [
-            'user_id_2' => ['exists:users,id'],
-            'group_id' => ['exists:group,id'],
-            'post_id' => ['exists:post,id'],
-            'type_post' => [Rule::in($this->type_post)],
-            'type_show' => [Rule::in($this->type_show)],
-            'images' => ['array'],
-            'user_id_tags' => ['array'],
-            'user_id_tags.*' => ['exists:users,id'],
-            'user_view_posts.*' => ['exists:users,id'],
-            'user_view_posts' => ['array'],
-        ], [
-            'user_id_2.exists' => 'Tai khoan khong ton tai',
-            'group_id.exists' => 'Group khong ton tai',
-            'post_id.exists' => 'Bai viet không ton tai',
-            'type_show.in_array' => 'Che do hien thi khong ton tai',
-            'type_post.in_array' => 'Che do bai viet khong ton tai',
-            'image.array' => 'Thong tin anh khong chinh xac',
-            'user_id_tag.array' => 'Danh sach tag khong hop le',
-            'user_id_tag.*.exists' => 'Danh sach tag khong hop le',
-            'user_view_posts.array' => ($request->type_show == config('post.type_show.specific_friend')) ? 'Danh sách người xem không hợp lệ' : 'Danh sách người cấm xem không hợp lệ',
-            'user_view_posts.*.exists' => ($request->type_show == config('post.type_show.specific_friend')) ? 'Danh sách người xem không hợp lệ' : 'Danh sách người cấm xem không hợp lệ',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'failed',
-                "message " => json_decode($validator->errors())
-            ]);
-        }
+
         $options = [];
-        $options['user_id'] = Auth::user()->id ?? 3;
+        $options['user_id'] = Auth::user()->id;
         $options['user_id_2'] = $request->user_id_2 ?? null;
         $options['group_id'] = $request->group_id ?? null;
-
         $options['post_id'] = $request->post_id ?? null;
-        $options['type_post'] = $request->type_post ?? config('post.type_post.nomarl');
-        $options['type_show'] = $request->type_show ?? config('post.type_show.public');
-        $options['level'] = config('post.level.post');
         $options['data'] = $request->data ?? '';
         if ((!$request->images) && (!$options['data']) && (!$options['post_id'])) {
             return response()->json([
                 'status' => 'failed',
-                "message" => 'Noi dung khong duoc trong'
+                "message" => 'Nội dung không được trống'
             ]);
         }
-        $options['user_id_tags'] = json_encode($request->user_id_tags ?? '');
-        $options['user_view_posts'] = json_encode($request->user_view_posts ?? '');
         $options['user_id_browse'] = 0;
         $options['src_images'] = json_encode($request->images ?? '');
 
-        if ($request->user_id_2 ?? null) {
-            $noti = new Notification();
-
-            $noti->user_id_1 = $request->user_id_2;
-            $noti->user_id_2 =  Auth::user()->id;
-            // $noti->post_id = $request->post_id;
-            $noti->type = 4;
-            $noti->seen = 0;
-            $noti->post_id = 9999;
-            $noti->save();
-        }
-
         if ($options['group_id']) {
-            if ($options['user_id_2']) {
-                return response()->json([
-                    'status' => 'failed',
-                    "message" => 'Khong the dang 1 bai viet tai nhieu noi'
-                ]);
-            }
-            $member = Member::where('user_id', $options['user_id'])->where('group_id', $options['group_id'])->with("group")->first();
-            if (!$member) {
-                return response()->json([
-                    'status' => 'failed',
-                    "message" => 'Bạn không là thành viên của group',
-                ]);
-            } else if ($options['type_post'] != config('post.type_post.nomarl') && $member->role != config('member.role.admin')) {
-                return response()->json([
-                    'status' => 'failed',
-                    "message" => 'Khong the dang bai viet nay tai group'
-                ]);
-            } else if ($member['group']['type'] == config('group.type.private')) {
+            $group = Group::where('id', $options['group_id'])->first();
+            if ($group['type'] == config('group.type.private')) {
                 $options['user_id_browse'] = null;
             }
         }
 
-        // $images = $request->images ?? null;
         if ($result = $this->postInterface->create($options)) {
             event(
                 $e = new PostEvent($result)
             );
+            if ($request->user_id_2 ?? null) {
+                $noti = new Notification();
+
+                $noti->user_id_1 = $request->user_id_2;
+                $noti->user_id_2 =  Auth::user()->id;
+                $noti->type = 4;
+                $noti->seen = 0;
+                $noti->post_id = 9999;
+                $noti->save();
+            }
             return response()->json([
                 'status' => 'success',
                 'message' => "Tao bai viet thanh cong",
@@ -219,62 +165,33 @@ class PostController extends Controller
         $post = $this->postInterface->getListPost(['post_id' => $request->post_id]);
         return $post;
     }
-    public function update(Request $request)
+    public function delete(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'id' => ['required'],
-            'type_post' => ['required', 'in_array:array(1, 2, 3, 4, 5)'],
-            'type_show' => ['required', 'in_array:array(1, 2, 3, 4, 5)'],
-            'images' => ['array'],
-            'user_id_tags' => ['array'],
-            'user_id_tags.*' => ['exists:users,id'],
-        ], [
-            'id.required' => 'Chưa chọn bài viết cần sửa',
-            'type_show.in_array' => 'Che do hien thi khong ton tai',
-            'type_post.in_array' => 'Che do bai viet khong ton tai',
-            'image.array' => 'Thong tin anh khong chinh xac',
-            'user_id_tag.array' => 'Danh sach tag khong hop le',
-            'user_id_tag.*.exists' => 'Danh sach tag khong hop le',
-        ]);
-        if ($validator->fails()) {
+        $post = Post::find($request->post_id);
+        if (($post->user_id) != Auth::user()->id) {
             return response()->json([
                 'status' => 'failed',
-                "message " => json_decode($validator->errors())
-            ]);
-        }
-        if ((Post::find($request->id)->user_id ?? null) != Auth::user()->id) {
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'failed',
-                    "message " => 'Bạn không có quyền chỉnh sửa bài viết'
-                ]);
-            }
-        }
-        $options = [];
-        $id = $request->id;
-        $options['user_id'] = Auth::user()->id;
-        $options['type_post'] = $request->type_post;
-        $options['type_show'] = $request->type_show;
-        $options['data'] = $request->data ?? null;
-        $options['user_id_tags'] = $request->user_id_tags ?? null;
-        $options['src_images'] = json_encode($request->images ?? null);
-        if ($result = $this->postInterface->update($id, $options)) {
-            return response()->json([
-                'status' => 'success',
-                'message' => "Sửa thành công",
-                'data' => $result
+                "message " => 'Bạn không có quyền xoá bài viết'
             ]);
         } else {
-            return response()->json([
-                'status' => 'failed',
-                "message" => 'He thong da co loi xay ra, vui long thu lai',
-            ]);
+
+            if ($result = $post->delete()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Xóa thanh cong',
+                    'data' => $result
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'failed',
+                    "message" => 'He thong da co loi xay ra, vui long thu lai',
+                ]);
+            }
         }
     }
     public function getListPostBrowse(Request $request)
     {
-        // return json_encode(['12'=> '14']);
-        // hieenj tao chua co truong hop kiem tra, tag nguoi khong thuoc group, user_id_2, nguoi tag, dang tunog , group phai co mqh
+
         $validator = Validator::make($request->all(), [
             'group_id' => ['exists:group,id'],
         ], [
@@ -333,8 +250,6 @@ class PostController extends Controller
 
     public function getList(Request $request)
     {
-        // return json_encode(['12'=> '14']);
-        // hieenj tao chua co truong hop kiem tra, tag nguoi khong thuoc group, user_id_2, nguoi tag, dang tunog , group phai co mqh
         $validator = Validator::make($request->all(), [
             'user_id' => ['exists:users,id'],
             'group_id' => ['exists:group,id'],
@@ -380,32 +295,10 @@ class PostController extends Controller
             ]);
         }
     }
-    public function getListSearch(Request $request)
-    {
-        $options = [];
-        $options['group_id'] = $request->group_id ?? null;
-        $options['keySearch'] = $request->keySearch ?? null;
-        $options['page'] = intval($request->page) ?? 1;
-
-
-
-        if ($result = $this->postInterface->getListPostSearch($options)) {
-            return response()->json([
-                'status' => 'success',
-                'data' => $result
-            ]);
-        } else {
-            return response()->json([
-                'status' => 'failed',
-                "message" => $options['keySearch'],
-            ]);
-        }
-    }
 
 
     public function getCountPost(Request $request)
     {
-        // hieenj tao chua co truong hop kiem tra, tag nguoi khong thuoc group, user_id_2, nguoi tag, dang tunog , group phai co mqh
         $validator = Validator::make($request->all(), [
             'user_id' => ['exists:users,id'],
             'group_id' => ['exists:group,id'],
@@ -422,9 +315,6 @@ class PostController extends Controller
         $options = [];
         $options['user_id'] = $request->user_id ?? null;
         $options['group_id'] = $request->group_id ?? null;
-
-        $user_id = Auth::user()->id;
-
 
 
         $result = $this->postInterface->getCountPost($options);
@@ -466,14 +356,14 @@ class PostController extends Controller
     }
 
 
-    public function searchPost(Request $request)
+    public function getListSearchAdmin(Request $request)
     {
 
         $options = [];
         $options['data'] = $request->keySearch ?? null;
         $options['group_id'] = $request->group_id ?? null;
 
-        $list = $this->postInterface->searchpost($options);
+        $list = $this->postInterface->getListSearchAdmin($options);
 
         if ($list) return response()->json([
             'status' => 'success',
@@ -484,6 +374,42 @@ class PostController extends Controller
             'data' => 'da co loi'
         ]);
     }
+
+
+
+    public function getListSearch(Request $request)
+    {
+        $options = [];
+        $options['group_id'] = $request->group_id ?? null;
+        $options['keySearch'] = $request->keySearch ?? null;
+        $options['page'] = intval($request->page) ?? 1;
+
+
+
+        if ($result = $this->postInterface->getListPostSearch($options)) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $result
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                "message" => $options['keySearch'],
+            ]);
+        }
+    }
+
+
+    function deletePostAdmin(Request $request)
+    {
+        $post = Post::find($request->id);
+        $post->delete();
+        return response()->json([
+            'status' => 'success',
+            'data' => 'xoa thanh cong'
+        ]);
+    }
+
 
     public function getListPostAdmin(Request $request)
     {
@@ -500,15 +426,5 @@ class PostController extends Controller
                 "message" => 'He thong da co loi xay ra, vui long thu lai',
             ]);
         }
-    }
-
-    function deletePostAdmin(Request $request)
-    {
-        $post = Post::find($request->id);
-        $post->delete();
-        return response()->json([
-            'status' => 'success',
-            'data' => 'xoa thanh cong'
-        ]);
     }
 }

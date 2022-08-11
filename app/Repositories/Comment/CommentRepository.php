@@ -4,7 +4,6 @@ namespace App\Repositories\Comment;
 
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use App\Repositories\Relationship\RelationshipInterface;
 use App\Repositories\Member\MemberInterface;
 use App\Models\User;
 use App\Models\Comment;
@@ -13,9 +12,8 @@ use App\Models\UserViewComment;
 
 class CommentRepository implements CommentInterface
 {
-    public function __construct(RelationshipInterface $relationshipInterface, MemberInterface $memberInterface, Comment $comment)
+    public function __construct(MemberInterface $memberInterface, Comment $comment)
     {
-        $this->relationshipInterface = $relationshipInterface;
         $this->memberInterface = $memberInterface;
         $this->comment = $comment;
     }
@@ -38,15 +36,3 @@ class CommentRepository implements CommentInterface
         return $query->with('user')->get();
     }
 }
-
-// }
-// $options['user_id'] = Auth::user()->id;
-// $options['user_id_2'] = $request->user_id_2 ?? null;
-// $options['group_id'] = $request->group_id ?? null;
-// $options['post_id'] = $request->post_id ?? null;
-// $options['type_post'] = $request->type_post ?? config('post.type_post.nomarl');
-// $options['type_show'] = $request->type_show ?? config('post.type_show.public');
-// $options['data'] = $request->data ?? null;
-// $options['user_id_tags'] = $request->user_id_tags ?? null;
-// $images = $request->images ?? null;
-// $options['src_images'] = [];

@@ -92,52 +92,19 @@ class UserRepository implements UserInterface
             return $user;
     }
 
-    public function getListUserByIdsOrderByMessage($user_ids, $key_search)
-    {
-        // return User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover')->with('relationship1','relationship2')->get();
-        $list = User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover');
-        if ($key_search) $list->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%" . $key_search . "%");
-
-        return $list->with('relationship1', 'relationship2')->get();
-    }
-    public function getListUserByIds($user_ids, $key_search)
-    {
-        // return User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover')->with('relationship1','relationship2')->get();
-        $list = User::whereIn('id', $user_ids)->select('id', 'first_name', 'last_name', 'avatar', 'cover');
-        if ($key_search) $list->where(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"), 'LIKE', "%" . $key_search . "%")->orderBy(DB::raw("CONCAT(`first_name`, ' ', `last_name`)"));
-
-        return $list->with('relationship1', 'relationship2')->get();
-    }
-
-
 
     public function getListUserBirthDayByIds($user_ids)
     {
-        return User::select('id', 'first_name', 'last_name', 'avatar', 'bird_day')->get();
+        return User::where('level', '<>', '5')->select('id', 'first_name', 'last_name', 'avatar', 'bird_day')->get();
     }
 
 
 
     public function searchUser($user_name)
     {
-        return User::where('email', '!=', 'admin123@gmail.com')->where('first_name', 'like', '%' . $user_name . '%')->orWhere('last_name', 'like', '%' . $user_name . '%')->get();
+        return User::where('email', '<>', 'admin123@gmail.com')->where('first_name', 'like', '%' . $user_name . '%')->orWhere('last_name', 'like', '%' . $user_name . '%')->get();
     }
 
-    public function banUser($options)
-    {
-        $user = User::find($options);
-        $user->level = 3;
-        if ($user->save())
-            return $user;
-    }
-
-    public function activeUser($options)
-    {
-        $user = User::find($options);
-        $user->level = 2;
-        if ($user->save())
-            return $user;
-    }
 
     public function assignRole($user_id, $role)
     {
@@ -150,7 +117,7 @@ class UserRepository implements UserInterface
     public function getlistUser($page)
     {
         $sumPage = User::all()->count();
-        $listUser = User::where('level', '!=', '5')->offset(($page - 1) * 6)->limit(6)->orderBy('level', 'desc')->get();
+        $listUser = User::where('level', '<>', '5')->offset(($page - 1) * 9)->limit(9)->orderBy('level', 'desc')->get();
         return [$listUser, $sumPage];
     }
 }

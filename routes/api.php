@@ -33,19 +33,14 @@ use Illuminate\Support\Facades\Mail;
 Route::post('register', [UserController::class, 'create'])->name('user.register');
 Route::post('login', [UserController::class, 'login'])->name('user.login');
 Route::post('logoff', [UserController::class, 'logoff'])->name('user.logoff');
-Route::post('test', [UserController::class, 'test'])->name('user.logoffs');
 
 
 
 Route::group([
     'prefix' => 'admin'
 ], function () {
-    Route::post('coreValue', [CoreValueController::class, 'createCoreValue']);
-    Route::get('coreValue', [CoreValueController::class, 'getCoreValue']);
-    Route::put('banUser', [UserController::class, 'banUser']);
-    Route::put('activeUser', [UserController::class, 'activeUser']);
-    Route::post('deletePostAdmin', [PostController::class, 'deletePostAdmin']);
-    Route::put('assignRole', [UserController::class, 'assignRole']);
+
+    Route::post('assignRole', [UserController::class, 'assignRole']);
 });
 
 
@@ -58,18 +53,13 @@ Route::group(['middleware' => ['auth:api']], function () {
         return $request->user();
     });
     // USER
-    Route::put('user', [UserController::class, 'update'])->name('user.update');
+    Route::post('user', [UserController::class, 'update'])->name('user.update');
     Route::get('user', [UserController::class, 'getUser'])->name('user.getUser');
     Route::get('user/searchUser', [UserController::class, 'searchUser']);
-    Route::put('user/uploadAvatar', [UserController::class, 'uploadAvatar'])->name('user.uploadAvatar');
+    Route::post('user/uploadAvatar', [UserController::class, 'uploadAvatar'])->name('user.uploadAvatar');
+    Route::get('user/list_user_birth_day', [UserController::class, 'listUserBirthday'])->name('user.list_user');
     Route::get('user/list_user', [UserController::class, 'listUser'])->name('user.list_user');
 
-    // Relationship
-    Route::group(['prefix' => 'relationship'], function () {
-
-
-        Route::get('list_user_birth_day', [RelationshipController::class, 'listUserBirthday']);
-    });
 
 
     //GROUP
@@ -103,27 +93,22 @@ Route::group(['middleware' => ['auth:api']], function () {
 
 
 
-    // Route::get('group/get-list-member', [GroupController::class, 'getListMember'])->name('group.get-list-member');
-    // Route::get('group/get-list-admin', [GroupController::class, 'getListAdmin'])->name('group.get-list-member');
-    // Route::get('group/get-list-pending', [GroupController::class, 'getListPending'])->name('group.get-list-pending');
     //  POST
-
 
     Route::get('post/get_count', [PostController::class, 'getCountPost']);
     Route::post('image/upload', [PostController::class, 'uploadImage'])->name('post.uploadImage');
     Route::post('file/upload', [PostController::class, 'uploadFile'])->name('post.uploadFile');
-
     Route::post('post/create', [PostController::class, 'create'])->name('post.create');
     Route::post('post/update', [PostController::class, 'update'])->name('post.update'); //ko co
-    Route::get('post/get_list', [PostController::class, 'getList'])->name('post.getList');
+    Route::post('post/delete', [PostController::class, 'delete'])->name('post.delete');
     Route::get('post/get_list_search', [PostController::class, 'getListSearch'])->name('post.getListSearch');
-
-    Route::get('post/get_list_admin', [PostController::class, 'getListPostAdmin'])->name('post.getListPostAdmin');
-
     Route::get('post/get_list_post_browse', [PostController::class, 'getListPostBrowse']);
     Route::get('post/show', [PostController::class, 'show']);
     Route::get('image/list', [PostController::class, 'getList']);
-    Route::get('post/searchPost', [PostController::class, 'searchPost']);
+    Route::get('post/get_list_search_admin', [PostController::class, 'getListSearchAdmin'])->name('post.getListSearchAdmin');
+    Route::post('post/delete_post_admin', [PostController::class, 'deletePostAdmin'])->name('post.deletePostAdmin');
+    Route::get('post/get_list', [PostController::class, 'getList'])->name('post.getList');
+    Route::get('post/get_list_admin', [PostController::class, 'getListPostAdmin'])->name('post.getListPostAdmin');
 
 
 
@@ -152,8 +137,9 @@ Route::group(['middleware' => ['auth:api']], function () {
     Route::get('chat/getMessage', [ChatController::class, 'getMessage']);
     Route::get('online', [UserController::class, 'online']);
 
-    //admin
-
-
-
+    //coreValue
+    Route::post('coreValue/create', [CoreValueController::class, 'createCoreValue']);
+    Route::get('coreValue/get', [CoreValueController::class, 'getCoreValue']);
+    Route::post('coreValue/delete', [CoreValueController::class, 'deleteCoreValue']);
+    Route::post('coreValue/update', [CoreValueController::class, 'updateCoreValue']);
 });

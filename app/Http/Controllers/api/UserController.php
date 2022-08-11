@@ -130,47 +130,7 @@ class UserController extends Controller
 
 
 
-    public function login1(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email_or_phone' => ['regex:/(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}|^.+@.+$/i', 'required'],
-            'password' => ['required', 'min:6', 'max:30'],
-        ], [
-            'email_or_phone.required' => 'Khong duoc de trong',
-            'email_or_phone.regex' => 'Vui long nhap email hoac so dien thoai',
-            'password.required' => 'Khong duoc de trong',
-            'password.min' => 'Mat khau khong duoc it hon 6 ki tu',
-            'password.max' => 'Mat khau khong duoc qua 30 ki tu',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'failed',
-                'errors' => $validator->errors()
-            ]);
-        }
-
-        $user_name = $request->email_or_phone;
-        $regex_email = '/^.+@.+$/i';
-        if (preg_match($regex_email, $user_name)) {
-            $column = 'email';
-        } else {
-            $column = 'phone';
-        }
-        $token = Auth::guard('api')->attempt([$column => $user_name, 'password' => $request->password], true);
-        if ($token) {
-            return response()->json([
-                'status' => 'success',
-                'access_token' => $token,
-            ]);
-        } else {
-            return response()->json([
-                'status' => 'failed',
-                'errors' => ['loser' => ['Tai khoan va mat khau khong chinh xac']]
-
-            ]);
-        }
-    }
 
     public function getUser(Request $request)
     {
@@ -336,7 +296,7 @@ class UserController extends Controller
         if ($result) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'Cap nhap thanh cong',
+                'message' => 'Cập nhật thành công',
                 'data' => $result
             ]);
         } else {
@@ -350,13 +310,12 @@ class UserController extends Controller
     public function uploadAvatar(Request $request)
     {
 
-
         $options = $request->all();
         $result = $this->userInterface->update($options);
         if ($result) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'Cap nhap thanh cong',
+                'message' => 'Cập nhật thành công',
                 'data' => $result
             ]);
         } else {
@@ -400,32 +359,6 @@ class UserController extends Controller
     }
 
 
-    public function banUser(Request $request)
-    {
-
-        $user = $request->id;
-
-        $result = $this->userInterface->banUser($user);
-        return response()->json([
-            'status' => 'success',
-            'message' => 'cap nhat thanh cong',
-            'data' => $result
-        ]);
-    }
-
-    public function activeUser(Request $request)
-    {
-
-        $user = $request->id;
-
-        $result = $this->userInterface->activeUser($user);
-        return response()->json([
-            'status' => 'success',
-            'message' => 'cap nhat thanh cong',
-            'data' => $result
-        ]);
-    }
-
     public function assignRole(Request $request)
     {
         $user_id = $request->user_id;
@@ -434,7 +367,7 @@ class UserController extends Controller
         if ($result) {
             return response()->json([
                 'status' => 'success',
-                'message' => 'Cap nhap thanh cong',
+                'message' => 'Cập nhật thành công',
                 'data' => $result
             ]);
         } else {
@@ -454,5 +387,16 @@ class UserController extends Controller
             'status' => 'success',
             'data' => $list
         ];
+    }
+
+
+
+    public function listUserBirthday()
+    {
+        $list = User::get();
+        return response()->json([
+            'status' => 'success',
+            'data' => $list
+        ]);
     }
 }

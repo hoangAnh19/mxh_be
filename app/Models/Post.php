@@ -12,7 +12,6 @@ class Post extends Model
     protected $table = 'post';
     use HasFactory;
     use SoftDeletes;
-    public $listPrevent = [];
 
     protected $fillable = [
         'user_id',
@@ -28,15 +27,15 @@ class Post extends Model
     ];
     public function comment()
     {
-        return $this->hasMany('App\Models\Comment', 'post_id', 'id')->whereNotIn('user_id', $this->listPrevent);
+        return $this->hasMany('App\Models\Comment', 'post_id', 'id');
     }
     public function share()
     {
-        return $this->hasMany('App\Models\Post', 'post_id', 'id')->whereNotIn('user_id', $this->listPrevent);
+        return $this->hasMany('App\Models\Post', 'post_id', 'id');
     }
     public function like()
     {
-        return $this->hasMany('App\Models\Like', 'post_id', 'id')->where('type', '<>', 0)->whereNotIn('user_id', $this->listPrevent);
+        return $this->hasMany('App\Models\Like', 'post_id', 'id')->where('type', '<>', 0);
     }
     public function group()
     {

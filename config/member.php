@@ -9,6 +9,6 @@ return [
     'status' => [
         'member' => 1,
         'pending' => 2,
-        'prevent' => 3,
+        
     ],
 ];

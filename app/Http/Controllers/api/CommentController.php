@@ -28,18 +28,6 @@ class CommentController extends Controller
     }
     public function getComment(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'post_id' => ['exists:post,id'],
-            'comment_id' => ['exists:comment,id'],
-        ], [
-            'post_id.exists' => 'Bai viet không ton tai',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'failed',
-                "message" => json_decode($validator->errors())
-            ]);
-        }
         $options = [];
         $options['post_id'] = $request->post_id ?? null;
         $options['page'] = intval($request->page) ?? 1;
@@ -59,19 +47,6 @@ class CommentController extends Controller
     }
     public function create(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'post_id' => ['exists:post,id'],
-            'comment_id' => ['exists:comment,id']
-        ], [
-            'post_id.exists' => 'Bai viet không ton tai',
-            'comment.exists' => 'Bình luận không ton tai',
-        ]);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'failed',
-                "message" => json_decode($validator->errors())
-            ]);
-        }
         $options = [];
         $options['user_id'] = Auth::user()->id;
 

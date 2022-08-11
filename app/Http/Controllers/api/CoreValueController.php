@@ -11,14 +11,22 @@ class CoreValueController extends Controller
 
     function getCoreValue()
     {
-        $core = CoreValue::get();
-        return $core;
-        // return response()->json([
-        //     'status' => 'success',
-        //     'message' => 'lay danh sach thanh cong',
-        //     'data' => $core
-        // ]);
+        if ($core = CoreValue::get()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'lay danh sach thanh cong',
+                'data' => $core
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                "message" => 'He thong da co loi xay ra, vui long thu lai',
+            ]);
+        }
     }
+
+
+
 
     function createCoreValue(Request $request)
     {
@@ -27,14 +35,54 @@ class CoreValueController extends Controller
         $newcore->CoreValue = $CoreValue;
 
 
-        CoreValue::updateOrCreate(['CoreValue' => $CoreValue]);
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tao moi thanh cong',
-            'data' => $newcore
-        ]);
+        if (CoreValue::updateOrCreate(['CoreValue' => $CoreValue])) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tao moi thanh cong',
+                'data' => $newcore
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                "message" => 'He thong da co loi xay ra, vui long thu lai',
+            ]);
+        }
     }
-    function updateCoreValue()
+
+
+
+    function deleteCoreValue(Request $request)
     {
+
+        $coreValue = CoreValue::find($request->id);
+        if ($coreValue->delete()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Xoá thành công',
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                "message" => 'He thong da co loi xay ra, vui long thu lai',
+            ]);
+        }
+    }
+
+    function updateCoreValue(Request $request)
+    {
+
+        $coreValue = CoreValue::find($request->id);
+        $coreValue->CoreValue = $request->coreValue;
+        if ($coreValue->save()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật thành công',
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'failed',
+                "message" => 'He thong da co loi xay ra, vui long thu lai',
+            ]);
+        }
     }
 }
